@@ -80,7 +80,7 @@ export default async function SiteLayout({
         </footer>
       </div>
 
-      <CartDrawer />
+      <CartDrawer business={business} />
     </CartProvider>
   );
 }

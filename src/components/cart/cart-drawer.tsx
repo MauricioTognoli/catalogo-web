@@ -4,7 +4,9 @@ import { useEffect, useRef, type MouseEvent } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart/cart-context";
 import { formatPrice } from "@/lib/utils/formatPrice";
+import type { PublicBusiness } from "@/lib/catalog/business";
 import { CartLineItem } from "./cart-line-item";
+import { WhatsAppCheckoutButton } from "./whatsapp-checkout-button";
 
 /**
  * Se usa el elemento <dialog> nativo en vez de un div con role="dialog"
@@ -13,7 +15,11 @@ import { CartLineItem } from "./cart-line-item";
  * esa lógica de accesibilidad nosotros mismos, sin agregar ninguna
  * librería.
  */
-export function CartDrawer() {
+export function CartDrawer({
+  business,
+}: {
+  business: Pick<PublicBusiness, "name" | "whatsapp_number">;
+}) {
   const { isOpen, closeCart, items, subtotal } = useCart();
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -100,6 +106,12 @@ export function CartDrawer() {
                 <span>Subtotal</span>
                 <span>{formatPrice(subtotal)}</span>
               </div>
+
+              <WhatsAppCheckoutButton
+                businessName={business.name}
+                whatsappNumber={business.whatsapp_number}
+              />
+
               <Link
                 href="/"
                 onClick={closeCart}
