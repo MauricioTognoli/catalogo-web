@@ -4,6 +4,7 @@ import { getPublicBusiness } from "@/lib/catalog/business";
 import { getPublicProduct } from "@/lib/catalog/products";
 import { formatPrice } from "@/lib/utils/formatPrice";
 import { ProductGallery } from "@/components/catalog/product-gallery";
+import { AddToCartForm } from "@/components/cart/add-to-cart-form";
 
 type ProductoPageProps = {
   params: Promise<{ slug: string }>;
@@ -66,21 +67,10 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
           </p>
         )}
 
-        {product.sizes.length > 0 && (
-          <div>
-            <h2 className="text-sm font-medium">Talles disponibles</h2>
-            <ul className="mt-2 flex flex-wrap gap-2">
-              {product.sizes.map((size) => (
-                <li
-                  key={size.id}
-                  className="rounded border border-zinc-300 px-3 py-1 text-sm dark:border-zinc-700"
-                >
-                  {size.label}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <AddToCartForm
+          product={product}
+          mainImageUrl={product.images[0]?.url ?? null}
+        />
       </div>
     </div>
   );
