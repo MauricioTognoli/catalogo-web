@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
+import { getStoragePathFromPublicUrl } from "@/lib/storage/getStoragePathFromPublicUrl";
 
 const BUCKET_NAME = "product-images";
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -15,15 +16,6 @@ const EXTENSION_BY_MIME_TYPE: Record<string, string> = {
 export type ProductImageActionState = {
   error: string | null;
 };
-
-function getStoragePathFromPublicUrl(url: string): string | null {
-  const marker = `/storage/v1/object/public/${BUCKET_NAME}/`;
-  const index = url.indexOf(marker);
-  if (index === -1) {
-    return null;
-  }
-  return decodeURIComponent(url.slice(index + marker.length));
-}
 
 export async function uploadProductImage(
   formData: FormData,
@@ -169,7 +161,7 @@ export async function deleteProductImage(
     return { error: "La imagen no existe o ya fue eliminada." };
   }
 
-  const path = getStoragePathFromPublicUrl(image.url);
+  const path = getStoragePathFromPublicUrl(image.url, BUCKET_NAME);
 
   const { error: deleteRowError } = await supabase
     .from("product_image")
