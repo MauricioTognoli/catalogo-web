@@ -4,6 +4,7 @@ import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import { updateProduct } from "@/actions/products";
 import { ProductForm } from "../product-form";
+import { ProductImages } from "../product-images";
 
 export default async function EditarProductoPage({
   params,
@@ -22,6 +23,7 @@ export default async function EditarProductoPage({
   const [
     { data: product, error: productError },
     { data: categories, error: categoriesError },
+    { data: images, error: imagesError },
   ] = await Promise.all([
     supabase
       .from("product")
@@ -36,10 +38,15 @@ export default async function EditarProductoPage({
       .select("id, name")
       .eq("business_id", business.id)
       .order("position", { ascending: true }),
+    supabase
+      .from("product_image")
+      .select("id, url, position")
+      .eq("product_id", id)
+      .order("position", { ascending: true }),
   ]);
 
-  if (productError || categoriesError) {
-    throw productError ?? categoriesError;
+  if (productError || categoriesError || imagesError) {
+    throw productError ?? categoriesError ?? imagesError;
   }
 
   if (!product) {
@@ -88,6 +95,8 @@ export default async function EditarProductoPage({
           categoryId: product.category_id,
         }}
       />
+
+      <ProductImages productId={product.id} images={images ?? []} />
     </main>
   );
 }
