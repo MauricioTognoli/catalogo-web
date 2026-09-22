@@ -48,13 +48,17 @@ type CartAction =
   | { type: "REMOVE_ITEM"; productId: string; sizeId: string | null }
   | { type: "CLEAR_CART" };
 
-const initialState: CartState = { items: [], isHydrated: false };
+// Exportados únicamente para poder testear el reducer de forma directa y
+// determinista (ver cart-context.test.ts), sin necesitar montar
+// <CartProvider> con jsdom/React Testing Library. No cambia ningún
+// comportamiento: CartProvider los sigue usando exactamente igual.
+export const initialState: CartState = { items: [], isHydrated: false };
 
 function clampQuantity(value: number): number {
   return Math.min(MAX_QUANTITY, Math.max(MIN_QUANTITY, Math.trunc(value)));
 }
 
-function cartReducer(state: CartState, action: CartAction): CartState {
+export function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case "HYDRATE":
       return { items: action.items, isHydrated: true };
