@@ -10,6 +10,15 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Tokens del tema editorial del catálogo público (bordó/crema).
+     Aditivos: el admin sigue usando --color-background/--color-foreground
+     y no referencia ninguno de estos. */
+  --color-brand: #7a1f2b;
+  --color-brand-foreground: #ffffff;
+  --color-cream: #faf6f0;
+  --color-cream-foreground: #171717;
+  --font-serif: var(--font-playfair);
 }
 
 @media (prefers-color-scheme: dark) {

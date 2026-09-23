@@ -16,7 +16,7 @@ export function ProductGallery({
 
   if (images.length === 0) {
     return (
-      <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100">
         <ImagePlaceholder label="Sin imágenes" />
       </div>
     );
@@ -26,7 +26,7 @@ export function ProductGallery({
 
   return (
     <div className="space-y-3">
-      <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100">
         <Image
           src={activeImage.url}
           alt={`${productName} — imagen ${activeIndex + 1} de ${images.length}`}
@@ -49,10 +49,8 @@ export function ProductGallery({
               aria-pressed={index === activeIndex}
               aria-label={`Ver imagen ${index + 1} de ${images.length}`}
               onClick={() => setActiveIndex(index)}
-              className={`relative h-16 w-16 overflow-hidden rounded border-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100 ${
-                index === activeIndex
-                  ? "border-zinc-900 dark:border-zinc-100"
-                  : "border-transparent"
+              className={`relative h-16 w-16 overflow-hidden rounded border-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+                index === activeIndex ? "border-brand" : "border-transparent"
               }`}
             >
               <Image

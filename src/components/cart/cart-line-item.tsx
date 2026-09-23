@@ -15,7 +15,7 @@ export function CartLineItem({ item }: { item: CartItem }) {
 
   return (
     <li className="flex gap-3">
-      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded bg-zinc-100 dark:bg-zinc-900">
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded bg-zinc-100">
         {item.productImageUrl ? (
           <Image
             src={item.productImageUrl}
@@ -30,21 +30,17 @@ export function CartLineItem({ item }: { item: CartItem }) {
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <p className="text-sm font-medium">{item.productName}</p>
+        <p className="text-sm font-medium text-zinc-900">{item.productName}</p>
         {item.sizeLabel && (
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Talle: {item.sizeLabel}
-          </p>
+          <p className="text-xs text-zinc-500">Talle: {item.sizeLabel}</p>
         )}
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          {formatPrice(item.unitPrice)}
-        </p>
+        <p className="text-sm text-zinc-600">{formatPrice(item.unitPrice)}</p>
 
         <div className="mt-1 flex flex-wrap items-center gap-3">
           <div
             role="group"
             aria-label={`Cantidad de ${lineLabel}`}
-            className="flex items-center rounded border border-zinc-300 dark:border-zinc-700"
+            className="flex items-center rounded-full border border-zinc-300"
           >
             <button
               type="button"
@@ -79,14 +75,16 @@ export function CartLineItem({ item }: { item: CartItem }) {
             type="button"
             onClick={() => removeItem(item.productId, item.sizeId)}
             aria-label={`Eliminar ${lineLabel} del carrito`}
-            className="inline-flex min-h-10 items-center text-xs text-red-600 hover:underline dark:text-red-400"
+            className="inline-flex min-h-10 items-center text-xs text-red-600 hover:underline"
           >
             Eliminar
           </button>
         </div>
       </div>
 
-      <p className="shrink-0 text-sm font-semibold">{formatPrice(lineTotal)}</p>
+      <p className="shrink-0 text-sm font-semibold text-zinc-900">
+        {formatPrice(lineTotal)}
+      </p>
     </li>
   );
 }

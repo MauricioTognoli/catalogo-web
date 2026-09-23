@@ -14,7 +14,7 @@ export function CartButton() {
           ? `Abrir carrito, ${itemCount} ${itemCount === 1 ? "unidad" : "unidades"}`
           : "Abrir carrito, vacío"
       }
-      className="flex min-h-11 items-center gap-2 rounded border border-zinc-300 px-3 py-1.5 text-sm hover:border-zinc-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:border-zinc-700 dark:hover:border-zinc-100 dark:focus-visible:outline-zinc-100"
+      className="flex min-h-11 items-center gap-2 rounded-full border border-zinc-300 px-4 py-1.5 text-sm hover:border-brand hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

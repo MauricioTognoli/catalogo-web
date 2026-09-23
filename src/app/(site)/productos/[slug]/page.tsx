@@ -49,20 +49,18 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
 
       <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold">{product.name}</h1>
-          <p className="mt-1 text-xl font-semibold">
+          <h1 className="font-serif text-3xl text-zinc-900">{product.name}</h1>
+          <p className="mt-1 text-xl font-semibold text-brand">
             {formatPrice(product.price)}
           </p>
         </div>
 
         {product.material && (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Material: {product.material}
-          </p>
+          <p className="text-sm text-zinc-600">Material: {product.material}</p>
         )}
 
         {product.description && (
-          <p className="whitespace-pre-line text-zinc-700 dark:text-zinc-300">
+          <p className="whitespace-pre-line text-zinc-700">
             {product.description}
           </p>
         )}

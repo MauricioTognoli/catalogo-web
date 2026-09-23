@@ -98,6 +98,44 @@ export const getPublicProducts = cache(
   },
 );
 
+/**
+ * Búsqueda de productos disponibles por nombre. Usa `ilike` (case
+ * insensitive) sobre `name`; un `query` vacío devuelve lista vacía en
+ * vez de todo el catálogo, para no confundir "sin búsqueda" con
+ * "buscar todo".
+ */
+export const searchPublicProducts = cache(
+  async (
+    businessId: string,
+    query: string,
+  ): Promise<PublicProductCard[]> => {
+    const trimmedQuery = query.trim();
+
+    if (trimmedQuery === "") {
+      return [];
+    }
+
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from("product")
+      .select(
+        "id, name, slug, price, material, product_image(url, position), product_size(available)",
+      )
+      .eq("business_id", businessId)
+      .eq("available", true)
+      .ilike("name", `%${trimmedQuery}%`)
+      .order("created_at", { ascending: false })
+      .returns<ProductListRow[]>();
+
+    if (error) {
+      throw error;
+    }
+
+    return (data ?? []).map(toProductCard);
+  },
+);
+
 /** Resuelve por business_id + slug, nunca por nombre. */
 export const getPublicProduct = cache(
   async (

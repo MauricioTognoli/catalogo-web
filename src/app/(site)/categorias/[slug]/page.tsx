@@ -44,11 +44,11 @@ export default async function CategoriaPage({ params }: CategoriaPageProps) {
   const products = await getPublicProducts(business.id, category.id);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">{category.name}</h1>
+    <div className="space-y-8">
+      <h1 className="font-serif text-3xl text-zinc-900">{category.name}</h1>
 
       {products.length === 0 ? (
-        <p className="text-zinc-600 dark:text-zinc-400">
+        <p className="text-zinc-600">
           Todavía no hay productos disponibles en esta categoría.
         </p>
       ) : (

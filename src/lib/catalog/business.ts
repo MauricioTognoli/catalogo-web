@@ -7,6 +7,9 @@ export type PublicBusiness = {
   slug: string;
   logo_url: string | null;
   whatsapp_number: string;
+  email: string | null;
+  address: string | null;
+  instagram_url: string | null;
 };
 
 /**
@@ -29,7 +32,9 @@ export const getPublicBusiness = cache(
 
     const { data, error } = await supabase
       .from("business")
-      .select("id, name, slug, logo_url, whatsapp_number")
+      .select(
+        "id, name, slug, logo_url, whatsapp_number, email, address, instagram_url",
+      )
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();

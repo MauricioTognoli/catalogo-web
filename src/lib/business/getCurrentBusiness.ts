@@ -7,6 +7,9 @@ export type Business = {
   slug: string;
   logo_url: string | null;
   whatsapp_number: string;
+  email: string | null;
+  address: string | null;
+  instagram_url: string | null;
   created_at: string;
   updated_at: string;
 };

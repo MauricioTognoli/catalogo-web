@@ -54,14 +54,14 @@ export function CartDrawer({
       aria-label="Carrito de compras"
       className="m-0 h-full max-h-none w-full max-w-none bg-transparent p-0 backdrop:bg-black/50"
     >
-      <div className="ml-auto flex h-full w-full max-w-sm flex-col bg-white dark:bg-zinc-950">
-        <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-4 dark:border-zinc-800">
-          <h2 className="text-lg font-semibold">Carrito</h2>
+      <div className="ml-auto flex h-full w-full max-w-sm flex-col bg-white">
+        <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-4">
+          <h2 className="font-serif text-lg text-zinc-900">Carrito</h2>
           <button
             type="button"
             onClick={closeCart}
             aria-label="Cerrar carrito"
-            className="flex min-h-11 min-w-11 items-center justify-center rounded hover:bg-zinc-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:hover:bg-zinc-900 dark:focus-visible:outline-zinc-100"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-full hover:bg-zinc-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -79,13 +79,11 @@ export function CartDrawer({
 
         {items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
-            <p className="text-zinc-600 dark:text-zinc-400">
-              Tu carrito está vacío.
-            </p>
+            <p className="text-zinc-600">Tu carrito está vacío.</p>
             <Link
               href="/"
               onClick={closeCart}
-              className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+              className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand/90"
             >
               Ver productos
             </Link>
@@ -101,10 +99,10 @@ export function CartDrawer({
               ))}
             </ul>
 
-            <div className="space-y-3 border-t border-zinc-200 px-4 py-4 dark:border-zinc-800">
-              <div className="flex items-center justify-between font-semibold">
+            <div className="space-y-3 border-t border-zinc-200 px-4 py-4">
+              <div className="flex items-center justify-between font-semibold text-zinc-900">
                 <span>Subtotal</span>
-                <span>{formatPrice(subtotal)}</span>
+                <span className="text-brand">{formatPrice(subtotal)}</span>
               </div>
 
               <WhatsAppCheckoutButton
@@ -115,7 +113,7 @@ export function CartDrawer({
               <Link
                 href="/"
                 onClick={closeCart}
-                className="block rounded border border-zinc-300 px-4 py-2 text-center text-sm font-medium hover:border-zinc-900 dark:border-zinc-700 dark:hover:border-zinc-100"
+                className="block rounded-full border border-zinc-300 px-4 py-2 text-center text-sm font-medium hover:border-brand hover:text-brand"
               >
                 Seguir comprando
               </Link>

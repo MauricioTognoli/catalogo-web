@@ -8,6 +8,13 @@ import { getStoragePathFromPublicUrl } from "@/lib/storage/getStoragePathFromPub
 
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const WHATSAPP_PATTERN = /^\d{6,15}$/;
+const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
+
+/** Campo opcional: string vacío se guarda como null, no como "". */
+function optionalField(formData: FormData, key: string): string | null {
+  const value = String(formData.get(key) ?? "").trim();
+  return value === "" ? null : value;
+}
 const BUSINESS_ASSETS_BUCKET = "business-assets";
 const MAX_LOGO_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const LOGO_EXTENSION_BY_MIME_TYPE: Record<string, string> = {
@@ -118,6 +125,9 @@ export async function updateBusiness(
 
   const name = String(formData.get("name") ?? "").trim();
   const whatsappNumber = String(formData.get("whatsapp_number") ?? "").trim();
+  const email = optionalField(formData, "email");
+  const address = optionalField(formData, "address");
+  const instagramUrl = optionalField(formData, "instagram_url");
 
   if (name.length < 2 || name.length > 120) {
     return { error: "El nombre debe tener entre 2 y 120 caracteres." };
@@ -130,6 +140,10 @@ export async function updateBusiness(
     };
   }
 
+  if (email && !EMAIL_PATTERN.test(email)) {
+    return { error: "El email no tiene un formato válido." };
+  }
+
   const supabase = await createClient();
 
   // business.id salió de getCurrentBusiness(), que ya lo resolvió
@@ -138,7 +152,13 @@ export async function updateBusiness(
   // recibido desde el cliente para verificar.
   const { error: updateError } = await supabase
     .from("business")
-    .update({ name, whatsapp_number: whatsappNumber })
+    .update({
+      name,
+      whatsapp_number: whatsappNumber,
+      email,
+      address,
+      instagram_url: instagramUrl,
+    })
     .eq("id", business.id);
 
   if (updateError) {

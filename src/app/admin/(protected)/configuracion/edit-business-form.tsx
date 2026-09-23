@@ -63,6 +63,46 @@ export function EditBusinessForm({ business }: { business: Business }) {
         </p>
       </div>
 
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium">
+          Email <span className="text-zinc-400">(opcional)</span>
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          defaultValue={business.email ?? ""}
+          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-transparent"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="address" className="block text-sm font-medium">
+          Dirección <span className="text-zinc-400">(opcional)</span>
+        </label>
+        <input
+          id="address"
+          name="address"
+          type="text"
+          defaultValue={business.address ?? ""}
+          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-transparent"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="instagram_url" className="block text-sm font-medium">
+          Instagram <span className="text-zinc-400">(opcional)</span>
+        </label>
+        <input
+          id="instagram_url"
+          name="instagram_url"
+          type="url"
+          placeholder="https://instagram.com/tu-negocio"
+          defaultValue={business.instagram_url ?? ""}
+          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-transparent"
+        />
+      </div>
+
       {state.error && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {state.error}

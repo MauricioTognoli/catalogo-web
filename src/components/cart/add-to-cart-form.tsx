@@ -50,10 +50,10 @@ export function AddToCartForm({
   }
 
   return (
-    <div className="space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+    <div className="space-y-4 border-t border-zinc-200 pt-4">
       {hasSizes && (
         <div>
-          <span id="size-label" className="block text-sm font-medium">
+          <span id="size-label" className="block text-sm font-medium text-zinc-900">
             Talle
           </span>
           <div
@@ -70,10 +70,10 @@ export function AddToCartForm({
                   setSelectedSizeId(size.id);
                   setSizeError(false);
                 }}
-                className={`min-h-11 min-w-11 rounded border px-3 py-1.5 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100 ${
+                className={`min-h-11 min-w-11 rounded-full border px-3 py-1.5 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
                   selectedSizeId === size.id
-                    ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                    : "border-zinc-300 dark:border-zinc-700"
+                    ? "border-brand bg-brand text-brand-foreground"
+                    : "border-zinc-300"
                 }`}
               >
                 {size.label}
@@ -81,7 +81,7 @@ export function AddToCartForm({
             ))}
           </div>
           {sizeError && (
-            <p role="alert" className="mt-1 text-sm text-red-600 dark:text-red-400">
+            <p role="alert" className="mt-1 text-sm text-red-600">
               Elegí un talle antes de agregar al carrito.
             </p>
           )}
@@ -89,13 +89,13 @@ export function AddToCartForm({
       )}
 
       <div>
-        <span id="quantity-label" className="block text-sm font-medium">
+        <span id="quantity-label" className="block text-sm font-medium text-zinc-900">
           Cantidad
         </span>
         <div
           role="group"
           aria-labelledby="quantity-label"
-          className="mt-2 flex w-fit items-center rounded border border-zinc-300 dark:border-zinc-700"
+          className="mt-2 flex w-fit items-center rounded-full border border-zinc-300"
         >
           <button
             type="button"
@@ -124,13 +124,13 @@ export function AddToCartForm({
       <button
         type="button"
         onClick={handleAdd}
-        className="flex min-h-11 w-full items-center justify-center rounded bg-zinc-900 px-4 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+        className="flex min-h-11 w-full items-center justify-center rounded-full bg-brand px-4 text-sm font-medium text-brand-foreground hover:bg-brand/90"
       >
         Agregar al carrito
       </button>
 
       {feedback && (
-        <p role="status" className="text-sm text-green-700 dark:text-green-400">
+        <p role="status" className="text-sm text-green-700">
           {feedback}
         </p>
       )}

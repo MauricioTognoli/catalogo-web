@@ -21,8 +21,8 @@ export default function SiteError({
 }) {
   return (
     <div className="flex flex-col items-center gap-4 py-16 text-center">
-      <h1 className="text-2xl font-semibold">Algo salió mal</h1>
-      <p className="text-zinc-600 dark:text-zinc-400">
+      <h1 className="font-serif text-3xl text-zinc-900">Algo salió mal</h1>
+      <p className="text-zinc-600">
         Hubo un problema al cargar esta página. Podés intentar de nuevo o
         volver al catálogo.
       </p>
@@ -31,20 +31,20 @@ export default function SiteError({
         <button
           type="button"
           onClick={() => retry()}
-          className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:focus-visible:outline-zinc-100"
+          className="rounded-full bg-brand px-6 py-2.5 text-sm font-medium text-brand-foreground hover:bg-brand/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           Intentar de nuevo
         </button>
         <Link
           href="/"
-          className="rounded border border-zinc-300 px-4 py-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:border-zinc-700 dark:focus-visible:outline-zinc-100"
+          className="rounded-full border border-brand px-6 py-2.5 text-sm font-medium text-brand hover:bg-brand hover:text-brand-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           Volver al catálogo
         </Link>
       </div>
 
       {error.digest && (
-        <p className="text-xs text-zinc-400 dark:text-zinc-600">
+        <p className="text-xs text-zinc-400">
           Código de referencia: {error.digest}
         </p>
       )}

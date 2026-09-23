@@ -1,9 +1,13 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import { getPublicBusiness } from "@/lib/catalog/business";
 import { getPublicCategories } from "@/lib/catalog/categories";
 import { getPublicProducts } from "@/lib/catalog/products";
 import { ProductGrid } from "@/components/catalog/product-grid";
+import { HeroBanner } from "@/components/catalog/hero-banner";
+import { CategoryTabs } from "@/components/catalog/category-tabs";
+
+const NEW_ARRIVALS_LIMIT = 8;
+const TOP_PRODUCTS_PER_CATEGORY = 8;
 
 export async function generateMetadata(): Promise<Metadata> {
   const business = await getPublicBusiness();
@@ -32,41 +36,64 @@ export default async function HomePage() {
     getPublicProducts(business.id),
   ]);
 
-  return (
-    <div className="space-y-10">
-      <h1 className="text-2xl font-semibold">{business.name}</h1>
+  // Un fetch por categoría (mismo getPublicProducts que ya usa la página
+  // de categoría): PublicProductCard no trae category_id, así que no se
+  // puede derivar esto filtrando la lista general en el cliente.
+  const categoryGroups = await Promise.all(
+    categories.map(async (category) => ({
+      category,
+      products: (await getPublicProducts(business.id, category.id)).slice(
+        0,
+        TOP_PRODUCTS_PER_CATEGORY,
+      ),
+    })),
+  );
 
-      {categories.length > 0 && (
-        <section aria-labelledby="categorias-heading" className="space-y-3">
-          <h2 id="categorias-heading" className="text-lg font-semibold">
-            Categorías
-          </h2>
-          <ul className="flex flex-wrap gap-2">
-            {categories.map((category) => (
-              <li key={category.id}>
-                <Link
-                  href={`/categorias/${category.slug}`}
-                  className="inline-block rounded-full border border-zinc-300 px-4 py-1.5 text-sm hover:border-zinc-900 hover:text-zinc-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:border-zinc-700 dark:hover:border-zinc-100 dark:hover:text-zinc-100 dark:focus-visible:outline-zinc-100"
-                >
-                  {category.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
+  const newArrivals = products.slice(0, NEW_ARRIVALS_LIMIT);
+
+  return (
+    <div className="space-y-16">
+      <HeroBanner
+        businessName={business.name}
+        imageUrl={products[0]?.mainImageUrl ?? null}
+      />
+
+      {categoryGroups.some((group) => group.products.length > 0) && (
+        <section aria-labelledby="top-product-heading" className="space-y-6">
+          <div className="text-center">
+            <p className="text-xs font-semibold tracking-[0.2em] text-brand uppercase">
+              Seleccionados para vos
+            </p>
+            <h2
+              id="top-product-heading"
+              className="mt-2 font-serif text-3xl text-zinc-900"
+            >
+              Top Product
+            </h2>
+          </div>
+          <CategoryTabs groups={categoryGroups} />
         </section>
       )}
 
-      <section aria-labelledby="productos-heading" className="space-y-4">
-        <h2 id="productos-heading" className="text-lg font-semibold">
-          Productos
-        </h2>
+      <section id="productos" aria-labelledby="new-arrivals-heading" className="space-y-6">
+        <div className="text-center">
+          <p className="text-xs font-semibold tracking-[0.2em] text-brand uppercase">
+            Recién llegados
+          </p>
+          <h2
+            id="new-arrivals-heading"
+            className="mt-2 font-serif text-3xl text-zinc-900"
+          >
+            New Arrivals
+          </h2>
+        </div>
 
-        {products.length === 0 ? (
-          <p className="text-zinc-600 dark:text-zinc-400">
+        {newArrivals.length === 0 ? (
+          <p className="text-center text-zinc-600">
             Todavía no hay productos disponibles.
           </p>
         ) : (
-          <ProductGrid products={products} />
+          <ProductGrid products={newArrivals} />
         )}
       </section>
     </div>

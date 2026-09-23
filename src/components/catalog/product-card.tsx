@@ -9,9 +9,9 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
     <li>
       <Link
         href={`/productos/${product.slug}`}
-        className="group block overflow-hidden rounded-lg border border-zinc-200 transition hover:border-zinc-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:border-zinc-800 dark:hover:border-zinc-600 dark:focus-visible:outline-zinc-100"
+        className="group block overflow-hidden rounded-lg border border-zinc-200 transition hover:border-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
-        <div className="relative aspect-square w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900">
+        <div className="relative aspect-square w-full overflow-hidden bg-zinc-100">
           {product.mainImageUrl ? (
             <Image
               src={product.mainImageUrl}
@@ -26,17 +26,17 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
         </div>
 
         <div className="space-y-1 p-3">
-          <p className="truncate font-medium">{product.name}</p>
-          <p className="font-semibold">{formatPrice(product.price)}</p>
+          <p className="truncate font-serif text-base text-zinc-900">
+            {product.name}
+          </p>
+          <p className="font-semibold text-brand">
+            {formatPrice(product.price)}
+          </p>
           {product.material && (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              {product.material}
-            </p>
+            <p className="text-sm text-zinc-500">{product.material}</p>
           )}
           {product.hasAvailableSizes && (
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Talles disponibles
-            </p>
+            <p className="text-xs text-zinc-500">Talles disponibles</p>
           )}
         </div>
       </Link>
