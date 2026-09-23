@@ -37,7 +37,7 @@ export function WhatsAppCheckoutButton({
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="block rounded bg-green-600 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100"
+      className="flex min-h-11 items-center justify-center rounded bg-green-600 px-4 text-center text-sm font-medium text-white hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100"
     >
       Finalizar por WhatsApp
     </a>

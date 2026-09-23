@@ -61,7 +61,7 @@ export function CartDrawer({
             type="button"
             onClick={closeCart}
             aria-label="Cerrar carrito"
-            className="rounded p-1 hover:bg-zinc-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:hover:bg-zinc-900 dark:focus-visible:outline-zinc-100"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded hover:bg-zinc-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:hover:bg-zinc-900 dark:focus-visible:outline-zinc-100"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

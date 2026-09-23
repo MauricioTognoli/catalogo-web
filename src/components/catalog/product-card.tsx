@@ -17,7 +17,7 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
               src={product.mainImageUrl}
               alt={product.name}
               fill
-              sizes="(min-width: 768px) 25vw, 50vw"
+              sizes="(min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
               className="object-cover transition group-hover:scale-105"
             />
           ) : (

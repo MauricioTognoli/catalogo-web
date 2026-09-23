@@ -70,7 +70,7 @@ export function AddToCartForm({
                   setSelectedSizeId(size.id);
                   setSizeError(false);
                 }}
-                className={`rounded border px-3 py-1.5 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100 ${
+                className={`min-h-11 min-w-11 rounded border px-3 py-1.5 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100 ${
                   selectedSizeId === size.id
                     ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
                     : "border-zinc-300 dark:border-zinc-700"
@@ -102,7 +102,7 @@ export function AddToCartForm({
             onClick={() => setQuantity((q) => Math.max(MIN_QUANTITY, q - 1))}
             disabled={quantity <= MIN_QUANTITY}
             aria-label="Restar una unidad"
-            className="px-3 py-1.5 disabled:opacity-40"
+            className="flex min-h-11 min-w-11 items-center justify-center disabled:opacity-40"
           >
             −
           </button>
@@ -114,7 +114,7 @@ export function AddToCartForm({
             onClick={() => setQuantity((q) => Math.min(MAX_QUANTITY, q + 1))}
             disabled={quantity >= MAX_QUANTITY}
             aria-label="Sumar una unidad"
-            className="px-3 py-1.5 disabled:opacity-40"
+            className="flex min-h-11 min-w-11 items-center justify-center disabled:opacity-40"
           >
             +
           </button>
@@ -124,7 +124,7 @@ export function AddToCartForm({
       <button
         type="button"
         onClick={handleAdd}
-        className="w-full rounded bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+        className="flex min-h-11 w-full items-center justify-center rounded bg-zinc-900 px-4 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
       >
         Agregar al carrito
       </button>
