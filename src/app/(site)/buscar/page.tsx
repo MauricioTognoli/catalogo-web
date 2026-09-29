@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublicBusiness } from "@/lib/catalog/business";
 import { searchPublicProducts } from "@/lib/catalog/products";
@@ -13,7 +14,11 @@ export async function generateMetadata({
   searchParams,
 }: BuscarPageProps): Promise<Metadata> {
   const { q } = await searchParams;
-  return { title: q ? `Resultados para "${q}"` : "Buscar" };
+  return {
+    title: q ? `Resultados para "${q}"` : "Buscar",
+    // Resultados de búsqueda: contenido duplicado/infinito, no se indexa.
+    robots: { index: false, follow: true },
+  };
 }
 
 export default async function BuscarPage({ searchParams }: BuscarPageProps) {
@@ -40,9 +45,17 @@ export default async function BuscarPage({ searchParams }: BuscarPageProps) {
           Escribí algo en el buscador para empezar.
         </p>
       ) : products.length === 0 ? (
-        <p className="text-zinc-600">
-          No encontramos productos que coincidan con &quot;{query}&quot;.
-        </p>
+        <div className="space-y-3">
+          <p className="text-zinc-600">
+            No encontramos productos que coincidan con &quot;{query}&quot;.
+          </p>
+          <Link
+            href="/#productos"
+            className="inline-block text-sm font-medium text-brand hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            Ver todos los productos
+          </Link>
+        </div>
       ) : (
         <>
           <ProductGrid products={products} />

@@ -39,14 +39,26 @@ const context: LinkContext = {
 };
 
 describe("valores iniciales y normalización", () => {
-  it("una tienda sin configuración conserva los textos que antes eran fijos", () => {
+  it("una tienda sin configuración no muestra textos promocionales de ejemplo", () => {
     const config = normalizeStorefrontConfig(null);
     expect(config).toEqual(defaultStorefrontConfig());
-    expect(config.announcement).toBe("Envíos a todo el país · Coordinamos por WhatsApp");
-    expect(config.hero.eyebrow).toBe("Nueva colección");
-    // Título vacío: la tienda muestra el nombre del negocio, como antes.
+    // Nada de envíos, descuentos ni beneficios que el negocio no cargó.
+    expect(config.announcement).toBe("");
+    expect(config.hero.eyebrow).toBe("");
+    expect(config.hero.description).toBe("");
+    // Título vacío: la tienda muestra el nombre del negocio.
     expect(config.hero.title).toBe("");
     expect(config.hero.cta.target).toEqual({ type: "page", page: "novedades" });
+  });
+
+  it("lo que el dueño sí configuró se conserva", () => {
+    const config = normalizeStorefrontConfig({
+      announcement: "Envío gratis en CABA",
+      hero: { eyebrow: "Nueva colección", description: "Hecho a mano." },
+    });
+    expect(config.announcement).toBe("Envío gratis en CABA");
+    expect(config.hero.eyebrow).toBe("Nueva colección");
+    expect(config.hero.description).toBe("Hecho a mano.");
   });
 
   it("las secciones nuevas arrancan vacías o desactivadas", () => {

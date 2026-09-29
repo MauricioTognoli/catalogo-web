@@ -101,19 +101,21 @@ function emptyCollection(): CollectionBlock {
 }
 
 /**
- * Portada inicial. Reproduce los textos que antes estaban fijos en el
- * código, así una tienda existente se ve igual tras la migración. Las
- * secciones nuevas arrancan vacías y, vacías, no se muestran.
+ * Portada inicial: sin textos promocionales de ejemplo. Nada de envíos,
+ * descuentos ni beneficios que el negocio no haya cargado: la barra de
+ * anuncios arranca vacía (no se muestra) y el hero muestra solo el nombre
+ * del negocio y el botón a los productos. Las secciones vacías no se
+ * muestran.
  */
 export function defaultStorefrontConfig(): StorefrontConfig {
   return {
     version: 1,
-    announcement: "Envíos a todo el país · Coordinamos por WhatsApp",
+    announcement: "",
     hero: {
       imagePath: null,
-      eyebrow: "Nueva colección",
+      eyebrow: "",
       title: "",
-      description: "Piezas pensadas para acompañar cada momento.",
+      description: "",
       cta: { label: "Ver productos", target: { type: "page", page: "novedades" } },
     },
     featured: { productIds: [] },
@@ -126,7 +128,7 @@ export function defaultStorefrontConfig(): StorefrontConfig {
       description: "",
       cta: { label: "Comprar ahora", target: null },
     },
-    gallery: { title: "Image Gallery", subtitle: "", images: [] },
+    gallery: { title: "Galería", subtitle: "", images: [] },
   };
 }
 

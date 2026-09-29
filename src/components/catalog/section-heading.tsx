@@ -1,4 +1,4 @@
-/** Encabezado de sección de la portada (mismo estilo que Top Product). */
+/** Encabezado de sección de la portada (bajada, título y subtítulo). */
 export function SectionHeading({
   id,
   eyebrow,

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { getSiteUrl } from "@/lib/seo/site-url";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Catálogo Web",
-  description: "Catálogo web",
+  // Base de canónicas y URLs de Open Graph (ver src/lib/seo/site-url.ts).
+  metadataBase: getSiteUrl(),
+  title: "Catálogo",
+  description: "Catálogo online con pedidos por WhatsApp.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

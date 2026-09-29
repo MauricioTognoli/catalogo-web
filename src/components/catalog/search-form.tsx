@@ -2,7 +2,17 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/catalog/ui/input";
 import { cn } from "@/lib/utils/cn";
 
-export function SearchForm({ className }: { className?: string }) {
+/**
+ * El layout dibuja dos buscadores (escritorio y móvil); cada uno necesita
+ * su propio `inputId` para que el <label> apunte al campo correcto.
+ */
+export function SearchForm({
+  className,
+  inputId = "q",
+}: {
+  className?: string;
+  inputId?: string;
+}) {
   return (
     <form
       action="/buscar"
@@ -10,12 +20,12 @@ export function SearchForm({ className }: { className?: string }) {
       role="search"
       className={cn("w-full", className)}
     >
-      <label htmlFor="q" className="sr-only">
+      <label htmlFor={inputId} className="sr-only">
         Buscar productos
       </label>
       <div className="relative">
         <Input
-          id="q"
+          id={inputId}
           name="q"
           type="search"
           placeholder="¿Qué estás buscando? ej: anillo"

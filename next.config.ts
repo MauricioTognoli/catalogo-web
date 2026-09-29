@@ -13,6 +13,17 @@ function getSupabaseHostname(): string | undefined {
 const supabaseHostname = getSupabaseHostname();
 
 const nextConfig: NextConfig = {
+  // Todo el panel (login, admin, vista previa de borradores, descargas y
+  // route handlers sin HTML) queda fuera de los buscadores aunque algún
+  // enlace lo exponga. Las páginas además lo declaran en su metadata.
+  async headers() {
+    return [
+      {
+        source: "/admin/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+    ];
+  },
   experimental: {
     serverActions: {
       // Las imágenes de producto viajan como multipart/form-data a través

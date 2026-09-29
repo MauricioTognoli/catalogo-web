@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getPublicBusiness } from "@/lib/catalog/business";
 import { getPublicProduct } from "@/lib/catalog/products";
 import { getRequestNow } from "@/lib/offers/request-time";
+import { firstPresent, logoShareImage, pageMetadata, toDescription } from "@/lib/seo/metadata";
 import { PriceTag } from "@/components/catalog/price-tag";
 import { OfferCountdown } from "@/components/catalog/offer-clock";
 import { ProductGallery } from "@/components/catalog/product-gallery";
@@ -22,11 +23,24 @@ export async function generateMetadata({
   const product = await getPublicProduct(business.id, slug);
   if (!product) return {};
 
-  return {
-    title: `${product.name} | ${business.name}`,
+  const cover = product.images[0];
+
+  // Sin precio en la descripción: las redes guardan la vista previa y un
+  // precio de oferta quedaría viejo al vencer.
+  return pageMetadata({
+    title: product.name,
     description:
-      product.description ?? `${product.name}, disponible en ${business.name}.`,
-  };
+      toDescription(product.description) ??
+      `${product.name}${product.material ? ` · ${product.material}` : ""} en ${business.name}. ${
+        product.inStock ? "Hacé tu pedido por WhatsApp." : "Sin stock por el momento."
+      }`,
+    path: `/productos/${product.slug}`,
+    siteName: business.name,
+    image: firstPresent(
+      cover ? { url: cover.url, alt: product.name } : null,
+      logoShareImage(business),
+    ),
+  });
 }
 
 export default async function ProductoPage({ params }: ProductoPageProps) {

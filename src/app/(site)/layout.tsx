@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { draftMode } from "next/headers";
 import Link from "next/link";
 import Image from "next/image";
 import { Playfair_Display } from "next/font/google";
@@ -17,6 +19,21 @@ const playfair = Playfair_Display({
   variable: "--font-playfair",
   display: "swap",
 });
+
+export async function generateMetadata(): Promise<Metadata> {
+  const business = await getPublicBusiness();
+  if (!business) return {};
+
+  // La vista previa de la portada (borrador) nunca se indexa.
+  const { isEnabled: isPreview } = await draftMode();
+
+  return {
+    title: { default: business.name, template: `%s · ${business.name}` },
+    applicationName: business.name,
+    openGraph: { type: "website", locale: "es_AR", siteName: business.name },
+    ...(isPreview ? { robots: { index: false, follow: false } } : {}),
+  };
+}
 
 export default async function SiteLayout({
   children,
@@ -79,7 +96,7 @@ export default async function SiteLayout({
               </Link>
 
               <div className="hidden flex-1 justify-center px-8 sm:flex">
-                <SearchForm className="max-w-sm" />
+                <SearchForm className="max-w-sm" inputId="q-desktop" />
               </div>
 
               <div className="shrink-0">
@@ -88,7 +105,7 @@ export default async function SiteLayout({
             </div>
 
             <div className="sm:hidden">
-              <SearchForm />
+              <SearchForm inputId="q-mobile" />
             </div>
 
             {categories.length > 0 && (

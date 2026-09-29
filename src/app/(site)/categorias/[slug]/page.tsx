@@ -5,6 +5,7 @@ import { getPublicCategory } from "@/lib/catalog/categories";
 import { getPublicProducts } from "@/lib/catalog/products";
 import { ProductGrid } from "@/components/catalog/product-grid";
 import { OfferRefresher } from "@/components/catalog/offer-refresher";
+import { firstPresent, logoShareImage, pageMetadata } from "@/lib/seo/metadata";
 
 type CategoriaPageProps = {
   params: Promise<{ slug: string }>;
@@ -20,10 +21,24 @@ export async function generateMetadata({
   const category = await getPublicCategory(business.id, slug);
   if (!category) return {};
 
-  return {
-    title: `${category.name} | ${business.name}`,
-    description: `Productos de ${category.name} en ${business.name}.`,
-  };
+  const products = await getPublicProducts(business.id, category.id);
+  const productWithImage = products.find((product) => product.mainImageUrl);
+
+  return pageMetadata({
+    title: category.name,
+    description:
+      products.length > 0
+        ? `${category.name} en ${business.name}: ${products.length} ${products.length === 1 ? "producto" : "productos"}. Hacé tu pedido por WhatsApp.`
+        : `${category.name} en ${business.name}.`,
+    path: `/categorias/${category.slug}`,
+    siteName: business.name,
+    image: firstPresent(
+      productWithImage
+        ? { url: productWithImage.mainImageUrl!, alt: productWithImage.name }
+        : null,
+      logoShareImage(business),
+    ),
+  });
 }
 
 export default async function CategoriaPage({ params }: CategoriaPageProps) {

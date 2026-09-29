@@ -10,7 +10,12 @@ import {
   visibleFeatured,
   type LinkContext,
 } from "@/lib/storefront/config";
-import { getPublicStorefront, storefrontImageUrl } from "@/lib/storefront/queries";
+import {
+  getPublicStorefront,
+  getPublishedStorefront,
+  storefrontImageUrl,
+} from "@/lib/storefront/queries";
+import { firstPresent, logoShareImage, pageMetadata, toDescription } from "@/lib/seo/metadata";
 import { ProductGrid } from "@/components/catalog/product-grid";
 import { HeroBanner } from "@/components/catalog/hero-banner";
 import { CategoryTabs } from "@/components/catalog/category-tabs";
@@ -36,10 +41,31 @@ export async function generateMetadata(): Promise<Metadata> {
     return {};
   }
 
-  return {
+  // Siempre la portada PUBLICADA: la vista previa no cambia lo que se
+  // comparte ni lo que ven los buscadores.
+  const [published, products] = await Promise.all([
+    getPublishedStorefront(business.id),
+    getPublicProducts(business.id),
+  ]);
+  const heroImage = storefrontImageUrl(published.hero.imagePath);
+  const productWithImage = products.find((product) => product.mainImageUrl);
+
+  return pageMetadata({
     title: business.name,
-    description: `Catálogo de ${business.name}. Mirá nuestros productos disponibles.`,
-  };
+    absoluteTitle: true,
+    description:
+      toDescription(published.hero.description) ??
+      `Conocé los productos de ${business.name} y hacé tu pedido por WhatsApp.`,
+    path: "/",
+    siteName: business.name,
+    image: firstPresent(
+      heroImage ? { url: heroImage, alt: business.name } : null,
+      productWithImage
+        ? { url: productWithImage.mainImageUrl!, alt: productWithImage.name }
+        : null,
+      logoShareImage(business),
+    ),
+  });
 }
 
 export default async function HomePage() {
@@ -111,8 +137,8 @@ export default async function HomePage() {
         <section aria-labelledby="top-product-heading" className="space-y-6">
           <SectionHeading
             id="top-product-heading"
-            eyebrow="Seleccionados para vos"
-            title="Top Product"
+            eyebrow="Explorá"
+            title="Por categoría"
           />
           <CategoryTabs groups={categoryGroups} />
         </section>
@@ -122,7 +148,7 @@ export default async function HomePage() {
         <SectionHeading
           id="new-arrivals-heading"
           eyebrow="Recién llegados"
-          title="New Arrivals"
+          title="Novedades"
         />
 
         {newArrivals.length === 0 ? (
@@ -145,7 +171,7 @@ export default async function HomePage() {
           <SectionHeading
             id="featured-heading"
             eyebrow="Nuestra selección"
-            title="Featured Products"
+            title="Destacados"
           />
           <ProductGrid products={featured} />
         </section>

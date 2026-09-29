@@ -59,6 +59,29 @@ export type PublicStorefront = {
 };
 
 /**
+ * Solo la versión PUBLICADA, sin importar la vista previa. La usa la
+ * metadata (títulos, descripciones, imagen para compartir): un borrador
+ * nunca se comparte ni se indexa como si fuera contenido publicado.
+ */
+export const getPublishedStorefront = cache(
+  async (businessId: string): Promise<StorefrontConfig> => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("storefront")
+      .select("published")
+      .eq("business_id", businessId)
+      .maybeSingle();
+
+    // Sin fila (negocio nuevo) o error: valores iniciales, así la portada
+    // nunca tira abajo la tienda. El error se registra igual.
+    if (error) {
+      console.error("No se pudo leer la portada publicada", error);
+    }
+    return normalizeStorefrontConfig(error ? null : data?.published);
+  },
+);
+
+/**
  * Portada para la tienda. Con la vista previa activa (draftMode, que solo
  * se activa desde el panel) intenta leer el borrador: la RLS y los
  * privilegios de columna garantizan que solo el dueño con sesión pueda
@@ -81,21 +104,6 @@ export const getPublicStorefront = cache(
       }
     }
 
-    const { data, error } = await supabase
-      .from("storefront")
-      .select("published")
-      .eq("business_id", businessId)
-      .maybeSingle();
-
-    // Sin fila (negocio nuevo) o error: valores iniciales, así la portada
-    // nunca tira abajo la tienda. El error se registra igual.
-    if (error) {
-      console.error("No se pudo leer la portada publicada", error);
-    }
-    if (error || !data) {
-      return { config: normalizeStorefrontConfig(null), isPreview: false };
-    }
-
-    return { config: normalizeStorefrontConfig(data.published), isPreview: false };
+    return { config: await getPublishedStorefront(businessId), isPreview: false };
   },
 );

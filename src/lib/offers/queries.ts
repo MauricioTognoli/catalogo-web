@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { isPublicProductPurchasable } from "@/lib/stock/availability";
 import { effectivePrice } from "./pricing";
 import { getRequestNow } from "./request-time";
 
@@ -23,7 +24,9 @@ type FeaturedOfferRow = {
     name: string;
     slug: string;
     price: number;
+    in_stock: boolean;
     product_image: { url: string; position: number }[];
+    product_size: { available: boolean; in_stock: boolean }[];
   };
 };
 
@@ -41,7 +44,7 @@ export const getFeaturedOffer = cache(
     const { data, error } = await supabase
       .from("product_offer")
       .select(
-        "offer_price, starts_at, ends_at, enabled, product!inner(id, name, slug, price, product_image(url, position))",
+        "offer_price, starts_at, ends_at, enabled, product!inner(id, name, slug, price, in_stock, product_image(url, position), product_size(available, in_stock))",
       )
       .eq("featured", true)
       .eq("enabled", true)
@@ -62,6 +65,17 @@ export const getFeaturedOffer = cache(
 
     const row = data?.[0];
     if (!row) return null;
+
+    // No se promociona en el banner algo que no se puede comprar: la
+    // portada muestra su banner habitual hasta que vuelva a haber stock.
+    const purchasable = isPublicProductPurchasable({
+      inStock: row.product.in_stock,
+      sizes: row.product.product_size.map((size) => ({
+        available: size.available,
+        inStock: size.in_stock,
+      })),
+    });
+    if (!purchasable) return null;
 
     const pricing = effectivePrice(
       Number(row.product.price),

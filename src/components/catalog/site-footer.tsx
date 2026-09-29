@@ -1,6 +1,10 @@
 import Link from "next/link";
 import type { PublicBusiness } from "@/lib/catalog/business";
 import type { PublicCategory } from "@/lib/catalog/categories";
+import { hasWhatsAppNumber } from "@/lib/whatsapp/buildWhatsAppUrl";
+
+const LINK_CLASS =
+  "hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
 
 export function SiteFooter({
   business,
@@ -47,7 +51,7 @@ export function SiteFooter({
         {categories.length > 0 && (
           <div className="space-y-3">
             <p className="text-sm font-semibold tracking-wide text-zinc-900 uppercase">
-              Shop
+              Categorías
             </p>
             <ul className="space-y-2 text-sm text-zinc-600">
               {categories.map((category) => (
@@ -70,8 +74,25 @@ export function SiteFooter({
               Contacto
             </p>
             <ul className="space-y-2 text-sm text-zinc-600">
-              <li>WhatsApp: {business.whatsapp_number}</li>
-              {business.email && <li>{business.email}</li>}
+              {hasWhatsAppNumber(business.whatsapp_number) && (
+                <li>
+                  <a
+                    href={`https://wa.me/${business.whatsapp_number}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={LINK_CLASS}
+                  >
+                    WhatsApp: +{business.whatsapp_number}
+                  </a>
+                </li>
+              )}
+              {business.email && (
+                <li>
+                  <a href={`mailto:${business.email}`} className={`break-all ${LINK_CLASS}`}>
+                    {business.email}
+                  </a>
+                </li>
+              )}
               {business.address && <li>{business.address}</li>}
             </ul>
           </div>
