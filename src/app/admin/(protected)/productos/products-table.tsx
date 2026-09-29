@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { PackagePlus, Search, SearchX, X } from "lucide-react";
+import { FileSpreadsheet, PackagePlus, Search, SearchX, X } from "lucide-react";
 import { formatPrice } from "@/lib/utils/formatPrice";
 import {
   ALL_CATEGORIES,
@@ -120,14 +120,22 @@ export function ProductsTable({
       <EmptyState
         icon={PackagePlus}
         title="Todavía no cargaste productos"
-        description="Creá el primero con nombre y precio; después le agregás fotos y talles."
+        description="Creá el primero con nombre y precio, o cargá varios juntos desde una planilla de Excel."
         action={
-          <Button asChild>
-            <Link href="/admin/productos/nuevo">
-              <PackagePlus />
-              Crear producto
-            </Link>
-          </Button>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button asChild>
+              <Link href="/admin/productos/nuevo">
+                <PackagePlus />
+                Crear producto
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/admin/productos/importar">
+                <FileSpreadsheet />
+                Importar desde Excel
+              </Link>
+            </Button>
+          </div>
         }
       />
     );

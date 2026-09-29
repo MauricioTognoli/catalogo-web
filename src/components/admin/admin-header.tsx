@@ -21,6 +21,11 @@ const SECTION_LABELS: Record<string, string> = {
   configuracion: "Configuración",
 };
 
+const CHILD_LABELS: Record<string, string> = {
+  nuevo: "Nuevo",
+  importar: "Importar",
+};
+
 /**
  * Migas solo en subpáginas (ej: Productos › Editar). En las secciones de
  * primer nivel el título ya lo muestra la página y el sidebar marca la
@@ -32,7 +37,7 @@ function getCrumbs(pathname: string) {
 
   return [
     { label: SECTION_LABELS[section], href: `/admin/${section}` },
-    { label: child === "nuevo" ? "Nuevo" : "Editar" },
+    { label: CHILD_LABELS[child] ?? "Editar" },
   ];
 }
 

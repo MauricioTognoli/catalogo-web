@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PackagePlus } from "lucide-react";
+import { FileSpreadsheet, PackagePlus } from "lucide-react";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import { ALL_CATEGORIES, parseStatusFilter } from "@/lib/admin/product-filters";
@@ -120,12 +120,20 @@ export default async function ProductosPage({
         title="Productos"
         description="Todo lo que ofrecés en la tienda. Los ocultos no se muestran a tus clientes."
         actions={
-          <Button asChild>
-            <Link href="/admin/productos/nuevo">
-              <PackagePlus />
-              Nuevo producto
-            </Link>
-          </Button>
+          <>
+            <Button asChild variant="outline">
+              <Link href="/admin/productos/importar">
+                <FileSpreadsheet />
+                Importar productos
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/admin/productos/nuevo">
+                <PackagePlus />
+                Nuevo producto
+              </Link>
+            </Button>
+          </>
         }
       />
 
