@@ -1,9 +1,14 @@
+import type { StockState } from "@/lib/stock/availability";
+
 export const PRODUCT_STATUS_FILTERS = [
   { value: "todos", label: "Todos los estados" },
   { value: "visibles", label: "Visibles en tienda" },
   { value: "ocultos", label: "Ocultos" },
   { value: "sin-imagen", label: "Sin imagen" },
   { value: "sin-categoria", label: "Sin categoría" },
+  { value: "sin-stock", label: "Sin stock" },
+  { value: "stock-bajo", label: "Stock bajo" },
+  { value: "stock-sin-cargar", label: "Stock sin cargar" },
 ] as const;
 
 export type ProductStatusFilter =
@@ -18,6 +23,7 @@ export type FilterableProduct = {
   categoryId: string | null;
   categoryName: string | null;
   imageCount: number;
+  stockState: StockState;
 };
 
 export type ProductFilters = {
@@ -56,6 +62,12 @@ function matchesStatus(
       return product.imageCount === 0;
     case "sin-categoria":
       return product.categoryId === null;
+    case "sin-stock":
+      return product.stockState === "out";
+    case "stock-bajo":
+      return product.stockState === "low";
+    case "stock-sin-cargar":
+      return product.stockState === "untracked";
     case "todos":
       return true;
   }

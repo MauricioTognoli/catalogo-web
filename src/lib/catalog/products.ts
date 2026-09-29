@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { isPublicProductPurchasable } from "@/lib/stock/availability";
 
 export type PublicProductCard = {
   id: string;
@@ -9,6 +10,8 @@ export type PublicProductCard = {
   material: string | null;
   mainImageUrl: string | null;
   hasAvailableSizes: boolean;
+  /** "En stock" / "Sin stock". La tienda nunca recibe cantidades. */
+  inStock: boolean;
 };
 
 export type PublicProductImage = {
@@ -21,6 +24,7 @@ export type PublicProductSize = {
   id: string;
   label: string;
   position: number;
+  inStock: boolean;
 };
 
 export type PublicProductDetail = {
@@ -31,7 +35,9 @@ export type PublicProductDetail = {
   price: number;
   material: string | null;
   images: PublicProductImage[];
+  /** Solo talles activos, en orden. Los sin stock se muestran deshabilitados. */
   sizes: PublicProductSize[];
+  inStock: boolean;
 };
 
 type ProductListRow = {
@@ -40,8 +46,11 @@ type ProductListRow = {
   slug: string;
   price: number;
   material: string | null;
+  in_stock: boolean;
   product_image: { url: string; position: number }[];
-  product_size: { available: boolean }[];
+  // Todos los talles del producto (la RLS pública ya no oculta los
+  // desactivados), para saber si el stock se gestiona por talle.
+  product_size: { available: boolean; in_stock: boolean }[];
 };
 
 function toProductCard(row: ProductListRow): PublicProductCard {
@@ -56,10 +65,16 @@ function toProductCard(row: ProductListRow): PublicProductCard {
     price: row.price,
     material: row.material,
     mainImageUrl: mainImage?.url ?? null,
-    // La RLS pública de product_size ya filtra por available = true, así
-    // que cualquier fila embebida aquí ya es disponible; el .some()
-    // queda como chequeo explícito por si esa policy cambia más adelante.
-    hasAvailableSizes: row.product_size.some((size) => size.available),
+    hasAvailableSizes: row.product_size.some(
+      (size) => size.available && size.in_stock,
+    ),
+    inStock: isPublicProductPurchasable({
+      inStock: row.in_stock,
+      sizes: row.product_size.map((size) => ({
+        available: size.available,
+        inStock: size.in_stock,
+      })),
+    }),
   };
 }
 
@@ -78,7 +93,7 @@ export const getPublicProducts = cache(
     let query = supabase
       .from("product")
       .select(
-        "id, name, slug, price, material, product_image(url, position), product_size(available)",
+        "id, name, slug, price, material, in_stock, product_image(url, position), product_size(available, in_stock)",
       )
       .eq("business_id", businessId)
       .eq("available", true)
@@ -120,7 +135,7 @@ export const searchPublicProducts = cache(
     const { data, error } = await supabase
       .from("product")
       .select(
-        "id, name, slug, price, material, product_image(url, position), product_size(available)",
+        "id, name, slug, price, material, in_stock, product_image(url, position), product_size(available, in_stock)",
       )
       .eq("business_id", businessId)
       .eq("available", true)
@@ -146,7 +161,7 @@ export const getPublicProduct = cache(
 
     const { data: product, error: productError } = await supabase
       .from("product")
-      .select("id, name, slug, description, price, material")
+      .select("id, name, slug, description, price, material, in_stock")
       .eq("business_id", businessId)
       .eq("slug", slug)
       .eq("available", true)
@@ -169,11 +184,12 @@ export const getPublicProduct = cache(
         .select("id, url, position")
         .eq("product_id", product.id)
         .order("position", { ascending: true }),
+      // Todos los talles: los desactivados no se muestran, pero cuentan
+      // para saber que el producto se vende por talle.
       supabase
         .from("product_size")
-        .select("id, label, position")
+        .select("id, label, position, available, in_stock")
         .eq("product_id", product.id)
-        .eq("available", true)
         .order("position", { ascending: true }),
     ]);
 
@@ -181,10 +197,27 @@ export const getPublicProduct = cache(
       throw imagesError ?? sizesError;
     }
 
+    const allSizes = sizes ?? [];
+    const { in_stock: productInStock, ...productFields } = product;
+
     return {
-      ...product,
+      ...productFields,
       images: images ?? [],
-      sizes: sizes ?? [],
+      sizes: allSizes
+        .filter((size) => size.available)
+        .map((size) => ({
+          id: size.id,
+          label: size.label,
+          position: size.position,
+          inStock: size.in_stock,
+        })),
+      inStock: isPublicProductPurchasable({
+        inStock: productInStock,
+        sizes: allSizes.map((size) => ({
+          available: size.available,
+          inStock: size.in_stock,
+        })),
+      }),
     };
   },
 );

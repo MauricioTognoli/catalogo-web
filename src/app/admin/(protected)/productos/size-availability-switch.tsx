@@ -41,7 +41,7 @@ export function SizeAvailabilitySwitch({
       checked={optimisticAvailable}
       onCheckedChange={handleChange}
       disabled={pending}
-      aria-label={`Talle ${sizeLabel} disponible`}
+      aria-label={`Talle ${sizeLabel} activo`}
     />
   );
 }

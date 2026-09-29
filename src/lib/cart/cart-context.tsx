@@ -129,6 +129,8 @@ type CartContextValue = {
   removeItem: (productId: string, sizeId: string | null) => void;
   clearCart: () => void;
   isOpen: boolean;
+  /** Cambia en cada apertura: dispara una revalidación de stock nueva. */
+  openCount: number;
   openCart: () => void;
   closeCart: () => void;
 };
@@ -139,6 +141,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
   const { items, isHydrated } = state;
   const [isOpen, setIsOpen] = useState(false);
+  const [openCount, setOpenCount] = useState(0);
 
   // El estado inicial es { items: [], isHydrated: false } tanto en
   // servidor como en el primer render de cliente (mismo HTML, sin
@@ -179,10 +182,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "REMOVE_ITEM", productId, sizeId }),
       clearCart: () => dispatch({ type: "CLEAR_CART" }),
       isOpen,
-      openCart: () => setIsOpen(true),
+      openCount,
+      openCart: () => {
+        setIsOpen(true);
+        setOpenCount((count) => count + 1);
+      },
       closeCart: () => setIsOpen(false),
     }),
-    [items, itemCount, subtotal, isOpen],
+    [items, itemCount, subtotal, isOpen, openCount],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

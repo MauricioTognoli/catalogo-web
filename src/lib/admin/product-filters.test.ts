@@ -15,6 +15,7 @@ const products: (FilterableProduct & { id: string })[] = [
     categoryId: "anillos",
     categoryName: "Anillos",
     imageCount: 2,
+    stockState: "ok",
   },
   {
     id: "2",
@@ -24,6 +25,7 @@ const products: (FilterableProduct & { id: string })[] = [
     categoryId: "aros",
     categoryName: "Aros",
     imageCount: 0,
+    stockState: "out",
   },
   {
     id: "3",
@@ -33,6 +35,7 @@ const products: (FilterableProduct & { id: string })[] = [
     categoryId: null,
     categoryName: null,
     imageCount: 1,
+    stockState: "low",
   },
 ];
 
@@ -71,6 +74,12 @@ describe("filterProducts", () => {
     expect(ids(filterProducts(products, { ...noFilters, status: "ocultos" }))).toEqual(["2"]);
     expect(ids(filterProducts(products, { ...noFilters, status: "sin-imagen" }))).toEqual(["2"]);
     expect(ids(filterProducts(products, { ...noFilters, status: "sin-categoria" }))).toEqual(["3"]);
+  });
+
+  it("filtra por estado de stock", () => {
+    expect(ids(filterProducts(products, { ...noFilters, status: "sin-stock" }))).toEqual(["2"]);
+    expect(ids(filterProducts(products, { ...noFilters, status: "stock-bajo" }))).toEqual(["3"]);
+    expect(ids(filterProducts(products, { ...noFilters, status: "stock-sin-cargar" }))).toEqual([]);
   });
 
   it("combina filtros", () => {

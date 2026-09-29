@@ -3,6 +3,7 @@
 import { Loader2, Plus } from "lucide-react";
 import { createProductSize } from "@/actions/productSizes";
 import { useFormAction } from "@/hooks/use-form-action";
+import { MAX_STOCK } from "@/lib/stock/availability";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +33,22 @@ export function CreateSizeForm({ productId }: { productId: string }) {
           minLength={1}
           maxLength={30}
           placeholder="Ej: 14, 16, 45 cm, Único"
+        />
+      </div>
+
+      <div className="grid gap-2 sm:w-28">
+        <Label htmlFor="new-size-stock">Stock</Label>
+        <Input
+          id="new-size-stock"
+          name="stock"
+          type="number"
+          inputMode="numeric"
+          required
+          min={0}
+          max={MAX_STOCK}
+          step={1}
+          placeholder="0"
+          className="tabular-nums"
         />
       </div>
 

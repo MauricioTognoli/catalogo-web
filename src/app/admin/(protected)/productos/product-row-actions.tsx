@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ExternalLink, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import {
+  Boxes,
+  ExternalLink,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { deleteProduct } from "@/actions/products";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,13 +19,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
+import { InventoryDialog, type InventoryProduct } from "./inventory-dialog";
 
 export function ProductRowActions({
   product,
 }: {
-  product: { id: string; name: string; slug: string; available: boolean };
+  product: InventoryProduct & { slug: string; available: boolean };
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [inventoryOpen, setInventoryOpen] = useState(false);
 
   return (
     <>
@@ -40,6 +48,10 @@ export function ProductRowActions({
               <Pencil />
               Editar
             </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setInventoryOpen(true)}>
+            <Boxes />
+            Ajustar stock
           </DropdownMenuItem>
           {product.available && (
             <DropdownMenuItem asChild>
@@ -64,6 +76,11 @@ export function ProductRowActions({
         </DropdownMenuContent>
       </DropdownMenu>
 
+      <InventoryDialog
+        product={product}
+        open={inventoryOpen}
+        onOpenChange={setInventoryOpen}
+      />
       <ConfirmDeleteDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}

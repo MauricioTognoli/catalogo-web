@@ -3,6 +3,8 @@
 import { useEffect, useRef, type MouseEvent } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart/cart-context";
+import { useCartStockCheck } from "@/lib/cart/use-cart-stock-check";
+import { isBlockingStatus } from "@/lib/stock/availability";
 import { formatPrice } from "@/lib/utils/formatPrice";
 import type { PublicBusiness } from "@/lib/catalog/business";
 import { CartLineItem } from "./cart-line-item";
@@ -20,8 +22,30 @@ export function CartDrawer({
 }: {
   business: Pick<PublicBusiness, "name" | "whatsapp_number">;
 }) {
-  const { isOpen, closeCart, items, subtotal } = useCart();
+  const { isOpen, openCount, closeCart, items, subtotal, removeItem } =
+    useCart();
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const stockCheck = useCartStockCheck(items, isOpen, openCount);
+
+  const blockedItems = items.filter((item) => {
+    const status = stockCheck.statusOf(item);
+    return status !== null && isBlockingStatus(status);
+  });
+
+  function removeBlockedItems() {
+    for (const item of blockedItems) {
+      removeItem(item.productId, item.sizeId);
+    }
+  }
+
+  // Mientras se verifica, o si hay líneas sin stock, no se abre WhatsApp:
+  // así el cliente se entera antes de mandar el pedido. Si la verificación
+  // falla (red), no se bloquea: se avisa que la joyería lo confirma.
+  const checkoutDisabledReason = stockCheck.checking
+    ? "Verificando stock..."
+    : blockedItems.length > 0
+      ? "Revisá los productos sin stock"
+      : null;
 
   // Sincroniza el estado de React con la API imperativa del <dialog>
   // (showModal/close no tienen equivalente declarativo): esto es
@@ -95,6 +119,8 @@ export function CartDrawer({
                 <CartLineItem
                   key={`${item.productId}-${item.sizeId ?? "none"}`}
                   item={item}
+                  status={stockCheck.statusOf(item)}
+                  onNavigate={closeCart}
                 />
               ))}
             </ul>
@@ -105,10 +131,43 @@ export function CartDrawer({
                 <span className="text-brand">{formatPrice(subtotal)}</span>
               </div>
 
+              {blockedItems.length > 0 && (
+                <div
+                  role="alert"
+                  className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                >
+                  <p>
+                    {blockedItems.length === 1
+                      ? "Un producto de tu carrito ya no está disponible."
+                      : `${blockedItems.length} productos de tu carrito ya no están disponibles.`}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={removeBlockedItems}
+                    className="font-medium underline underline-offset-2"
+                  >
+                    Quitarlos del carrito
+                  </button>
+                </div>
+              )}
+
+              {stockCheck.failed && (
+                <p className="text-xs text-zinc-500">
+                  No pudimos verificar el stock en este momento. Te lo
+                  confirmamos al responder tu pedido.
+                </p>
+              )}
+
               <WhatsAppCheckoutButton
                 businessName={business.name}
                 whatsappNumber={business.whatsapp_number}
+                disabledReason={checkoutDisabledReason}
               />
+
+              <p className="text-center text-xs text-zinc-500">
+                Enviar el pedido no reserva unidades: confirmamos la
+                disponibilidad al responderte.
+              </p>
 
               <Link
                 href="/"

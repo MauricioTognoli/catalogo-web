@@ -53,6 +53,20 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
           <p className="mt-1 text-xl font-semibold text-brand">
             {formatPrice(product.price)}
           </p>
+          {/* Solo el estado, nunca cantidades. */}
+          <p
+            className={`mt-2 inline-flex items-center gap-1.5 text-sm font-medium ${
+              product.inStock ? "text-green-700" : "text-zinc-500"
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className={`h-2 w-2 rounded-full ${
+                product.inStock ? "bg-green-600" : "bg-zinc-400"
+              }`}
+            />
+            {product.inStock ? "En stock" : "Sin stock"}
+          </p>
         </div>
 
         {product.material && (

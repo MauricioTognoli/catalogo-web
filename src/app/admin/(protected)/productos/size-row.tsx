@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { deleteProductSize, updateProductSize } from "@/actions/productSizes";
 import { useFormAction } from "@/hooks/use-form-action";
+import { MAX_STOCK } from "@/lib/stock/availability";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,11 +35,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 import { SizeAvailabilitySwitch } from "./size-availability-switch";
+import { cn } from "@/lib/utils/cn";
 
 type ProductSize = {
   id: string;
   label: string;
   available: boolean;
+  stock: number | null;
   position: number;
 };
 
@@ -85,8 +88,25 @@ function EditSizeDialog({
             />
           </div>
 
+          <div className="grid gap-2">
+            <Label htmlFor={`size-stock-${size.id}`}>Stock</Label>
+            <Input
+              id={`size-stock-${size.id}`}
+              name="stock"
+              type="number"
+              inputMode="numeric"
+              required
+              min={0}
+              max={MAX_STOCK}
+              step={1}
+              defaultValue={size.stock ?? ""}
+              placeholder="Cargar cantidad"
+              className="tabular-nums"
+            />
+          </div>
+
           <div className="flex items-center justify-between gap-4">
-            <Label htmlFor={`size-available-${size.id}`}>Disponible</Label>
+            <Label htmlFor={`size-available-${size.id}`}>Activo</Label>
             <Switch
               id={`size-available-${size.id}`}
               name="available"
@@ -175,6 +195,19 @@ export function SizeRow({
       </div>
 
       <span className="min-w-0 flex-1 truncate font-medium">{size.label}</span>
+
+      <button
+        type="button"
+        onClick={() => setEditOpen(true)}
+        aria-label={`Editar stock del talle ${size.label}`}
+        className={cn(
+          "w-16 rounded-md px-1 py-1 text-right text-sm tabular-nums outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50",
+          size.stock === null && "text-muted-foreground",
+          size.stock === 0 && "font-medium text-destructive",
+        )}
+      >
+        {size.stock === null ? "Cargar" : size.stock === 0 ? "Sin stock" : `${size.stock} u.`}
+      </button>
 
       <SizeAvailabilitySwitch
         productId={productId}

@@ -17,6 +17,7 @@ type ProductSize = {
   id: string;
   label: string;
   available: boolean;
+  stock: number | null;
   position: number;
 };
 
@@ -83,7 +84,8 @@ export function ProductSizes({
         <CardTitle>Talles y medidas</CardTitle>
         <CardDescription>
           Opcional. Útil para anillos, cadenas o pulseras con varias medidas.
-          Si agregás talles, el cliente elige uno antes de sumarlo al carrito.
+          Si agregás talles, el cliente elige uno antes de sumarlo al carrito
+          y el stock se lleva por talle. Un talle inactivo no se ofrece.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -91,13 +93,17 @@ export function ProductSizes({
 
         {orderedSizes.length === 0 ? (
           <p className="rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
-            Sin talles: se vende como medida única.
+            Sin talles: se vende como medida única y el stock se carga en
+            Inventario, arriba.
           </p>
         ) : (
           <div>
             <div className="flex items-center justify-between border-b pb-2 text-xs font-medium text-muted-foreground">
               <span>Orden y talle</span>
-              <span className="mr-10">Disponible</span>
+              <span className="mr-10 flex gap-6">
+                <span>Stock</span>
+                <span>Activo</span>
+              </span>
             </div>
             <ul className="divide-y">
               {orderedSizes.map((size, index) => (

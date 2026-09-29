@@ -6,6 +6,7 @@ import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils/slugify";
 import { getStoragePathFromPublicUrl } from "@/lib/storage/getStoragePathFromPublicUrl";
+import { parseStockInput } from "@/lib/stock/availability";
 
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const MAX_DESCRIPTION_LENGTH = 2000;
@@ -90,6 +91,12 @@ export async function createProduct(
   const { name, description, price, material, available, categoryId } =
     parsed.value;
 
+  // Un producto nuevo todavía no tiene talles: el stock es del producto.
+  const stock = parseStockInput(formData.get("stock"));
+  if (!stock.ok) {
+    return { error: stock.error };
+  }
+
   const slug = slugify(name);
   if (!slug) {
     return { error: "El nombre debe incluir al menos una letra o número." };
@@ -125,6 +132,7 @@ export async function createProduct(
       price,
       material,
       available,
+      stock: stock.value,
     })
     .select("id")
     .single();
@@ -187,7 +195,7 @@ export async function updateProduct(
   // ya lo exige; esto da un mensaje claro en vez de "0 filas afectadas".
   const { data: existingProduct, error: fetchError } = await supabase
     .from("product")
-    .select("id")
+    .select("id, product_size(id)")
     .eq("id", productId)
     .eq("business_id", business.id)
     .maybeSingle();
@@ -198,6 +206,19 @@ export async function updateProduct(
 
   if (!existingProduct) {
     return { error: "El producto no existe o no te pertenece." };
+  }
+
+  // Con talles, el stock se gestiona por talle: se ignora el campo. Sin
+  // talles es obligatorio (así los productos migrados con stock "sin
+  // cargar" reciben una cantidad real la próxima vez que se guardan).
+  const managedBySize = (existingProduct.product_size as unknown[]).length > 0;
+  let stockUpdate: { stock: number } | Record<string, never> = {};
+  if (!managedBySize) {
+    const stock = parseStockInput(formData.get("stock"));
+    if (!stock.ok) {
+      return { error: stock.error };
+    }
+    stockUpdate = { stock: stock.value };
   }
 
   if (categoryId) {
@@ -227,6 +248,7 @@ export async function updateProduct(
       material,
       available,
       category_id: categoryId,
+      ...stockUpdate,
     })
     .eq("id", productId)
     .eq("business_id", business.id);

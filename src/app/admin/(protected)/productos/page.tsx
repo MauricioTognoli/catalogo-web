@@ -4,6 +4,7 @@ import { PackagePlus } from "lucide-react";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import { ALL_CATEGORIES, parseStatusFilter } from "@/lib/admin/product-filters";
+import { summarizeStock } from "@/lib/stock/availability";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/admin/page-header";
 import { BusinessRequired } from "@/components/admin/business-required";
@@ -20,12 +21,20 @@ type ProductListRow = {
   price: number;
   material: string | null;
   available: boolean;
+  stock: number | null;
   category_id: string | null;
   // category_id es una FK "muchos a uno": PostgREST devuelve un único
   // objeto (o null), no un array. Sin tipos generados de Supabase, el
   // cliente infiere "any[]" por defecto; se corrige con `.returns<T>()`.
   category: { name: string } | null;
   product_image: { url: string; position: number }[];
+  product_size: {
+    id: string;
+    label: string;
+    stock: number | null;
+    available: boolean;
+    position: number;
+  }[];
 };
 
 function firstParam(value: string | string[] | undefined): string {
@@ -55,7 +64,7 @@ export default async function ProductosPage({
     supabase
       .from("product")
       .select(
-        "id, name, slug, price, material, available, category_id, category:category_id(name), product_image(url, position)",
+        "id, name, slug, price, material, available, stock, category_id, category:category_id(name), product_image(url, position), product_size(id, label, stock, available, position)",
       )
       .eq("business_id", business.id)
       .order("created_at", { ascending: false })
@@ -72,20 +81,31 @@ export default async function ProductosPage({
     throw productsError ?? categoriesError;
   }
 
-  const rows: ProductTableRow[] = products.map((product) => ({
-    id: product.id,
-    name: product.name,
-    slug: product.slug,
-    price: product.price,
-    material: product.material,
-    available: product.available,
-    categoryId: product.category_id,
-    categoryName: product.category?.name ?? null,
-    imageCount: product.product_image.length,
-    coverUrl:
-      [...product.product_image].sort((a, b) => a.position - b.position)[0]
-        ?.url ?? null,
-  }));
+  const rows: ProductTableRow[] = products.map((product) => {
+    const sizes = [...product.product_size]
+      .sort((a, b) => a.position - b.position)
+      .map(({ id, label, stock, available }) => ({ id, label, stock, available }));
+    const stockSummary = summarizeStock({ stock: product.stock, sizes });
+
+    return {
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: product.price,
+      material: product.material,
+      available: product.available,
+      categoryId: product.category_id,
+      categoryName: product.category?.name ?? null,
+      imageCount: product.product_image.length,
+      coverUrl:
+        [...product.product_image].sort((a, b) => a.position - b.position)[0]
+          ?.url ?? null,
+      stock: product.stock,
+      sizes,
+      stockSummary,
+      stockState: stockSummary.state,
+    };
+  });
 
   const query = firstParam(params.q);
   const categoryParam = firstParam(params.categoria);

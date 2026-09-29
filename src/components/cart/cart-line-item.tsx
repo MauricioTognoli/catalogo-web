@@ -4,9 +4,42 @@ import Image from "next/image";
 import { useCart } from "@/lib/cart/cart-context";
 import { formatPrice } from "@/lib/utils/formatPrice";
 import { ImagePlaceholder } from "@/components/catalog/image-placeholder";
+import Link from "next/link";
 import { MAX_QUANTITY, type CartItem } from "@/lib/cart/types";
+import type { CartLineStatus } from "@/lib/stock/availability";
 
-export function CartLineItem({ item }: { item: CartItem }) {
+/** Avisos sin cantidades: la tienda nunca muestra cuántas unidades hay. */
+const STATUS_MESSAGES: Record<
+  Exclude<CartLineStatus, "ok">,
+  { text: string; tone: "error" | "warning" }
+> = {
+  out_of_stock: {
+    text: "Se quedó sin stock. Quitalo para poder enviar el pedido.",
+    tone: "error",
+  },
+  unavailable: {
+    text: "Ya no está disponible. Quitalo para poder enviar el pedido.",
+    tone: "error",
+  },
+  needs_size: {
+    text: "Ahora se vende por talle. Quitalo y elegí un talle en el producto.",
+    tone: "error",
+  },
+  insufficient: {
+    text: "Hay menos unidades de las que pediste. Al responder te confirmamos cuántas podemos ofrecerte.",
+    tone: "warning",
+  },
+};
+
+export function CartLineItem({
+  item,
+  status,
+  onNavigate,
+}: {
+  item: CartItem;
+  status: CartLineStatus | null;
+  onNavigate: () => void;
+}) {
   const { updateQuantity, removeItem } = useCart();
   const lineTotal = item.unitPrice * item.quantity;
   const lineLabel = item.sizeLabel
@@ -36,6 +69,31 @@ export function CartLineItem({ item }: { item: CartItem }) {
         )}
         <p className="text-sm text-zinc-600">{formatPrice(item.unitPrice)}</p>
 
+        {status && status !== "ok" && (
+          <p
+            role="alert"
+            className={`text-xs ${
+              STATUS_MESSAGES[status].tone === "error"
+                ? "text-red-600"
+                : "text-amber-700"
+            }`}
+          >
+            {STATUS_MESSAGES[status].text}
+            {status === "needs_size" && (
+              <>
+                {" "}
+                <Link
+                  href={`/productos/${item.productSlug}`}
+                  onClick={onNavigate}
+                  className="font-medium underline"
+                >
+                  Ver producto
+                </Link>
+              </>
+            )}
+          </p>
+        )}
+
         <div className="mt-1 flex flex-wrap items-center gap-3">
           <div
             role="group"
@@ -63,7 +121,10 @@ export function CartLineItem({ item }: { item: CartItem }) {
               onClick={() =>
                 updateQuantity(item.productId, item.sizeId, item.quantity + 1)
               }
-              disabled={item.quantity >= MAX_QUANTITY}
+              disabled={
+                item.quantity >= MAX_QUANTITY ||
+                (status !== null && status !== "ok")
+              }
               aria-label={`Sumar una unidad de ${lineLabel}`}
               className="flex min-h-10 min-w-10 items-center justify-center text-sm disabled:opacity-40"
             >

@@ -10,6 +10,7 @@ import {
   filterProducts,
   type ProductStatusFilter,
 } from "@/lib/admin/product-filters";
+import type { StockState, StockSummary } from "@/lib/stock/availability";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ import { EmptyState } from "@/components/admin/empty-state";
 import { ProductThumbnail } from "@/components/admin/product-thumbnail";
 import { ProductAvailabilitySwitch } from "./product-availability-switch";
 import { ProductRowActions } from "./product-row-actions";
+import { ProductStockButton } from "./product-stock-button";
 
 export type ProductTableRow = {
   id: string;
@@ -44,6 +46,10 @@ export type ProductTableRow = {
   categoryName: string | null;
   imageCount: number;
   coverUrl: string | null;
+  stock: number | null;
+  sizes: { id: string; label: string; stock: number | null; available: boolean }[];
+  stockSummary: StockSummary;
+  stockState: StockState;
 };
 
 type Category = { id: string; name: string };
@@ -225,6 +231,7 @@ export function ProductsTable({
                     </p>
                   </div>
                 </Link>
+                <ProductStockButton product={product} summary={product.stockSummary} />
                 <ProductAvailabilitySwitch
                   productId={product.id}
                   productName={product.name}
@@ -242,6 +249,7 @@ export function ProductsTable({
                   <TableHead className="pl-4">Producto</TableHead>
                   <TableHead>Categoría</TableHead>
                   <TableHead className="text-right">Precio</TableHead>
+                  <TableHead className="w-32">Stock</TableHead>
                   <TableHead className="w-28">Visible</TableHead>
                   <TableHead className="w-14 pr-4">
                     <span className="sr-only">Acciones</span>
@@ -278,6 +286,12 @@ export function ProductsTable({
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatPrice(product.price)}
+                    </TableCell>
+                    <TableCell>
+                      <ProductStockButton
+                        product={product}
+                        summary={product.stockSummary}
+                      />
                     </TableCell>
                     <TableCell>
                       <ProductAvailabilitySwitch

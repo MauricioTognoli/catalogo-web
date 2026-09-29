@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import type { ProductActionState } from "@/actions/products";
+import { MAX_STOCK, type StockSummary } from "@/lib/stock/availability";
+import { StockBadge } from "@/components/admin/stock-badge";
 import { useFormAction } from "@/hooks/use-form-action";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +41,7 @@ type ProductFormDefaults = {
   material?: string | null;
   available?: boolean;
   categoryId?: string | null;
+  stock?: number | null;
 };
 
 type ProductFormProps = {
@@ -53,6 +56,11 @@ type ProductFormProps = {
   successMessage?: string;
   showSlugField?: boolean;
   defaultValues?: ProductFormDefaults;
+  /**
+   * Si el producto tiene talles, el stock se gestiona en cada talle y acá
+   * solo se muestra el resumen. Sin talles, se carga en este formulario.
+   */
+  sizeStockSummary?: StockSummary | null;
 };
 
 // Radix Select no admite "" como valor de un ítem.
@@ -66,6 +74,7 @@ export function ProductForm({
   successMessage,
   showSlugField = false,
   defaultValues,
+  sizeStockSummary = null,
 }: ProductFormProps) {
   const { handleSubmit, pending, error } = useFormAction(action, {
     successMessage,
@@ -224,6 +233,50 @@ export function ProductForm({
                   </p>
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Inventario</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {sizeStockSummary ? (
+                <div className="grid gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium">Stock por talle</span>
+                    <StockBadge summary={sizeStockSummary} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Este producto tiene talles: las cantidades se cargan en
+                    cada talle, más abajo.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-2">
+                  <Label htmlFor="stock">Unidades en stock</Label>
+                  <Input
+                    id="stock"
+                    name="stock"
+                    type="number"
+                    inputMode="numeric"
+                    required
+                    min={0}
+                    max={MAX_STOCK}
+                    step={1}
+                    placeholder="Ej: 3"
+                    defaultValue={defaultValues?.stock ?? ""}
+                    aria-describedby="stock-hint"
+                    className="tabular-nums"
+                  />
+                  <p id="stock-hint" className="text-xs text-muted-foreground">
+                    {defaultValues?.stock === null
+                      ? "Todavía sin cargar: se vende como disponible hasta que ingreses la cantidad real. "
+                      : "Con 0 se muestra \"Sin stock\" y no se puede agregar al carrito. "}
+                    Si le agregás talles, el stock pasa a cargarse por talle.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

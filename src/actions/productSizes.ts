@@ -3,8 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
+import { parseStockInput } from "@/lib/stock/availability";
 
 const MAX_LABEL_LENGTH = 30;
+
+// El stock por talle también se muestra en el listado y en los avisos del
+// inicio, no solo en la ficha del producto.
+function revalidateProductPaths(productId: string) {
+  revalidatePath(`/admin/productos/${productId}`);
+  revalidatePath("/admin/productos");
+  revalidatePath("/admin/dashboard");
+}
 
 export type ProductSizeActionState = {
   error: string | null;
@@ -32,6 +41,11 @@ export async function createProductSize(
   }
 
   const available = formData.get("available") !== null;
+
+  const stock = parseStockInput(formData.get("stock"));
+  if (!stock.ok) {
+    return { error: stock.error };
+  }
 
   const supabase = await createClient();
 
@@ -69,6 +83,7 @@ export async function createProductSize(
     product_id: productId,
     label,
     available,
+    stock: stock.value,
     position,
   });
 
@@ -79,7 +94,7 @@ export async function createProductSize(
     return { error: "No se pudo crear el talle. Probá de nuevo." };
   }
 
-  revalidatePath(`/admin/productos/${productId}`);
+  revalidateProductPaths(productId);
   return { error: null };
 }
 
@@ -106,6 +121,11 @@ export async function updateProductSize(
   }
 
   const available = formData.get("available") !== null;
+
+  const stock = parseStockInput(formData.get("stock"));
+  if (!stock.ok) {
+    return { error: stock.error };
+  }
 
   const supabase = await createClient();
 
@@ -141,7 +161,7 @@ export async function updateProductSize(
 
   const { error: updateError } = await supabase
     .from("product_size")
-    .update({ label, available })
+    .update({ label, available, stock: stock.value })
     .eq("id", sizeId)
     .eq("product_id", productId);
 
@@ -152,7 +172,7 @@ export async function updateProductSize(
     return { error: "No se pudo actualizar el talle. Probá de nuevo." };
   }
 
-  revalidatePath(`/admin/productos/${productId}`);
+  revalidateProductPaths(productId);
   return { error: null };
 }
 
@@ -219,7 +239,7 @@ export async function toggleProductSizeAvailability(
     };
   }
 
-  revalidatePath(`/admin/productos/${productId}`);
+  revalidateProductPaths(productId);
   return { error: null };
 }
 
@@ -282,7 +302,7 @@ export async function deleteProductSize(
     return { error: "No se pudo eliminar el talle. Probá de nuevo." };
   }
 
-  revalidatePath(`/admin/productos/${productId}`);
+  revalidateProductPaths(productId);
   return { error: null };
 }
 
@@ -354,6 +374,6 @@ export async function reorderProductSizes(
     return { error: "No se pudo guardar el nuevo orden. Probá de nuevo." };
   }
 
-  revalidatePath(`/admin/productos/${productId}`);
+  revalidateProductPaths(productId);
   return { error: null };
 }

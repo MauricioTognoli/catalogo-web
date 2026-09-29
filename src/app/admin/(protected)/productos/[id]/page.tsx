@@ -5,6 +5,8 @@ import { ExternalLink, SearchX } from "lucide-react";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import { updateProduct } from "@/actions/products";
+import { summarizeStock } from "@/lib/stock/availability";
+import { StockBadge } from "@/components/admin/stock-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/admin/page-header";
@@ -41,7 +43,7 @@ export default async function EditarProductoPage({
     supabase
       .from("product")
       .select(
-        "id, name, slug, description, price, material, available, category_id",
+        "id, name, slug, description, price, material, available, stock, category_id",
       )
       .eq("id", id)
       .eq("business_id", business.id)
@@ -58,7 +60,7 @@ export default async function EditarProductoPage({
       .order("position", { ascending: true }),
     supabase
       .from("product_size")
-      .select("id, label, available, position")
+      .select("id, label, available, stock, position")
       .eq("product_id", id)
       .order("position", { ascending: true }),
   ]);
@@ -82,6 +84,11 @@ export default async function EditarProductoPage({
     );
   }
 
+  const stockSummary = summarizeStock({
+    stock: product.stock,
+    sizes: sizes ?? [],
+  });
+
   return (
     <>
       {creado === "1" && <CreatedToast />}
@@ -91,6 +98,7 @@ export default async function EditarProductoPage({
           <span className="flex items-center gap-3">
             <span className="truncate">{product.name}</span>
             {!product.available && <Badge variant="secondary">Oculto</Badge>}
+            <StockBadge summary={stockSummary} />
           </span>
         }
         actions={
@@ -134,7 +142,9 @@ export default async function EditarProductoPage({
           material: product.material,
           available: product.available,
           categoryId: product.category_id,
+          stock: product.stock,
         }}
+        sizeStockSummary={stockSummary.managedBySize ? stockSummary : null}
       />
 
       <ProductImages productId={product.id} images={images ?? []} />

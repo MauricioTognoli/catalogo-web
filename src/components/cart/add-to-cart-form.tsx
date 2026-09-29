@@ -20,6 +20,24 @@ export function AddToCartForm({
   const [sizeError, setSizeError] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
+  if (!product.inStock) {
+    return (
+      <div className="space-y-2 border-t border-zinc-200 pt-4">
+        <button
+          type="button"
+          disabled
+          className="flex min-h-11 w-full items-center justify-center rounded-full bg-zinc-200 px-4 text-sm font-medium text-zinc-500"
+        >
+          Sin stock
+        </button>
+        <p className="text-sm text-zinc-500">
+          Por ahora no hay unidades disponibles. Podés consultarnos por
+          WhatsApp si vuelve a ingresar.
+        </p>
+      </div>
+    );
+  }
+
   function handleAdd() {
     if (hasSizes && !selectedSizeId) {
       setSizeError(true);
@@ -28,10 +46,13 @@ export function AddToCartForm({
     }
 
     // product.sizes ya viene filtrado por available = true desde
-    // getPublicProduct, así que cualquier size.id elegible acá siempre
-    // es un talle disponible.
+    // getPublicProduct, y los talles sin stock no se pueden elegir.
     const selectedSize =
       product.sizes.find((size) => size.id === selectedSizeId) ?? null;
+
+    if (selectedSize && !selectedSize.inStock) {
+      return;
+    }
 
     addItem({
       productId: product.id,
@@ -66,11 +87,14 @@ export function AddToCartForm({
                 key={size.id}
                 type="button"
                 aria-pressed={selectedSizeId === size.id}
+                disabled={!size.inStock}
+                aria-label={size.inStock ? undefined : `${size.label}, sin stock`}
+                title={size.inStock ? undefined : "Sin stock"}
                 onClick={() => {
                   setSelectedSizeId(size.id);
                   setSizeError(false);
                 }}
-                className={`min-h-11 min-w-11 rounded-full border px-3 py-1.5 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+                className={`min-h-11 min-w-11 rounded-full border px-3 py-1.5 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:border-zinc-200 disabled:text-zinc-400 disabled:line-through ${
                   selectedSizeId === size.id
                     ? "border-brand bg-brand text-brand-foreground"
                     : "border-zinc-300"
@@ -83,6 +107,11 @@ export function AddToCartForm({
           {sizeError && (
             <p role="alert" className="mt-1 text-sm text-red-600">
               Elegí un talle antes de agregar al carrito.
+            </p>
+          )}
+          {product.sizes.some((size) => !size.inStock) && (
+            <p className="mt-1 text-xs text-zinc-500">
+              Los talles tachados están sin stock.
             </p>
           )}
         </div>

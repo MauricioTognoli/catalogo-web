@@ -23,6 +23,11 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
           ) : (
             <ImagePlaceholder label="Sin imagen" />
           )}
+          {!product.inStock && (
+            <span className="absolute top-2 left-2 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-zinc-700">
+              Sin stock
+            </span>
+          )}
         </div>
 
         <div className="space-y-1 p-3">
@@ -35,7 +40,7 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
           {product.material && (
             <p className="text-sm text-zinc-500">{product.material}</p>
           )}
-          {product.hasAvailableSizes && (
+          {product.inStock && product.hasAvailableSizes && (
             <p className="text-xs text-zinc-500">Talles disponibles</p>
           )}
         </div>

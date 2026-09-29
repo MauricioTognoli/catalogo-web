@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
+  Boxes,
+  PackageX,
   CheckCircle2,
   Circle,
   Eye,
@@ -16,6 +18,8 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { formatPrice } from "@/lib/utils/formatPrice";
+import { summarizeStock } from "@/lib/stock/availability";
+import { StockBadge } from "@/components/admin/stock-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,9 +46,11 @@ type DashboardProductRow = {
   name: string;
   price: number;
   available: boolean;
+  stock: number | null;
   category_id: string | null;
   created_at: string;
   product_image: { url: string; position: number }[];
+  product_size: { stock: number | null; available: boolean }[];
 };
 
 const LATEST_PRODUCTS_LIMIT = 5;
@@ -76,7 +82,7 @@ export default async function DashboardPage() {
     supabase
       .from("product")
       .select(
-        "id, name, price, available, category_id, created_at, product_image(url, position)",
+        "id, name, price, available, stock, category_id, created_at, product_image(url, position), product_size(stock, available)",
       )
       .eq("business_id", business.id)
       .order("created_at", { ascending: false })
@@ -101,6 +107,21 @@ export default async function DashboardPage() {
     (product) => product.product_image.length === 0,
   ).length;
   const categories = categoryCount ?? 0;
+
+  // Solo importan los visibles: un producto oculto sin stock no afecta
+  // a la tienda.
+  const visibleStock = products
+    .filter((product) => product.available)
+    .map((product) =>
+      summarizeStock({ stock: product.stock, sizes: product.product_size }),
+    );
+  const outOfStock = visibleStock.filter((stock) => stock.state === "out").length;
+  const lowStock = visibleStock.filter((stock) => stock.state === "low").length;
+  const untrackedStock = products.filter(
+    (product) =>
+      summarizeStock({ stock: product.stock, sizes: product.product_size })
+        .state === "untracked",
+  ).length;
   const latestProducts = products.slice(0, LATEST_PRODUCTS_LIMIT);
 
   const setupSteps = [
@@ -134,6 +155,24 @@ export default async function DashboardPage() {
   const setupComplete = completedSteps === setupSteps.length;
 
   const pendingTasks = [
+    outOfStock > 0 && {
+      icon: PackageX,
+      label: plural(outOfStock, "producto visible sin stock", "productos visibles sin stock"),
+      hint: "Se muestran como \"Sin stock\" y no se pueden pedir.",
+      href: "/admin/productos?estado=sin-stock",
+    },
+    lowStock > 0 && {
+      icon: Boxes,
+      label: plural(lowStock, "producto con stock bajo", "productos con stock bajo"),
+      hint: "Quedan pocas unidades: revisá si hay que reponer.",
+      href: "/admin/productos?estado=stock-bajo",
+    },
+    untrackedStock > 0 && {
+      icon: Boxes,
+      label: plural(untrackedStock, "producto con stock sin cargar", "productos con stock sin cargar"),
+      hint: "Se venden sin límite hasta que cargues la cantidad real.",
+      href: "/admin/productos?estado=stock-sin-cargar",
+    },
     withoutImage > 0 && {
       icon: ImageOff,
       label: plural(withoutImage, "producto sin imágenes", "productos sin imágenes"),
@@ -253,7 +292,14 @@ export default async function DashboardPage() {
                             {formatPrice(product.price)}
                           </p>
                         </div>
-                        {!product.available && (
+                        {product.available ? (
+                          <StockBadge
+                            summary={summarizeStock({
+                              stock: product.stock,
+                              sizes: product.product_size,
+                            })}
+                          />
+                        ) : (
                           <Badge variant="secondary">Oculto</Badge>
                         )}
                       </Link>
