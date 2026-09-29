@@ -1,12 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import {
-  deleteProductImage,
-  type ProductImageActionState,
-} from "@/actions/productImages";
-
-const initialState: ProductImageActionState = { error: null };
+import { useState } from "react";
+import { Trash2 } from "lucide-react";
+import { deleteProductImage } from "@/actions/productImages";
+import { Button } from "@/components/ui/button";
+import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
 
 export function DeleteImageButton({
   productId,
@@ -15,50 +13,29 @@ export function DeleteImageButton({
   productId: string;
   imageId: string;
 }) {
-  const [confirming, setConfirming] = useState(false);
-  const [state, formAction, pending] = useActionState(
-    deleteProductImage,
-    initialState,
-  );
-
-  if (!confirming) {
-    return (
-      <button
-        type="button"
-        onClick={() => setConfirming(true)}
-        className="text-xs text-red-600 hover:underline dark:text-red-400"
-      >
-        Eliminar
-      </button>
-    );
-  }
+  const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      <form action={formAction} className="flex items-center gap-2 text-xs">
-        <input type="hidden" name="productId" value={productId} />
-        <input type="hidden" name="imageId" value={imageId} />
-        <button
-          type="submit"
-          disabled={pending}
-          className="font-medium text-red-600 disabled:opacity-50 dark:text-red-400"
-        >
-          {pending ? "Eliminando..." : "Confirmar"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setConfirming(false)}
-          disabled={pending}
-          className="text-zinc-500 disabled:opacity-50"
-        >
-          Cancelar
-        </button>
-      </form>
-      {state.error && (
-        <p role="alert" className="text-xs text-red-600 dark:text-red-400">
-          {state.error}
-        </p>
-      )}
-    </div>
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-8 text-muted-foreground hover:text-destructive"
+        onClick={() => setOpen(true)}
+        aria-label="Eliminar imagen"
+      >
+        <Trash2 />
+      </Button>
+      <ConfirmDeleteDialog
+        open={open}
+        onOpenChange={setOpen}
+        title="¿Eliminar esta imagen?"
+        description="Se quita del producto y de la tienda. Esta acción no se puede deshacer."
+        action={deleteProductImage}
+        fields={{ productId, imageId }}
+        successMessage="Imagen eliminada"
+      />
+    </>
   );
 }

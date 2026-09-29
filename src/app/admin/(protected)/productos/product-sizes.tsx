@@ -1,7 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { reorderProductSizes } from "@/actions/productSizes";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { CreateSizeForm } from "./create-size-form";
 import { SizeRow } from "./size-row";
 
@@ -29,13 +37,11 @@ export function ProductSizes({
   }
 
   const [isReordering, setIsReordering] = useState(false);
-  const [reorderError, setReorderError] = useState<string | null>(null);
   const dragIndexRef = useRef<number | null>(null);
 
   async function persistOrder(newOrder: ProductSize[]) {
     setOrderedSizes(newOrder);
     setIsReordering(true);
-    setReorderError(null);
 
     const result = await reorderProductSizes(
       productId,
@@ -43,7 +49,7 @@ export function ProductSizes({
     );
 
     if (result.error) {
-      setReorderError(result.error);
+      toast.error(result.error);
       setOrderedSizes(sizes);
     }
 
@@ -72,47 +78,49 @@ export function ProductSizes({
   }
 
   return (
-    <section className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold">Talles</h2>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Opcional: un producto puede no tener talles, tener uno o varios.
-        </p>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Talles y medidas</CardTitle>
+        <CardDescription>
+          Opcional. Útil para anillos, cadenas o pulseras con varias medidas.
+          Si agregás talles, el cliente elige uno antes de sumarlo al carrito.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <CreateSizeForm productId={productId} />
 
-      <CreateSizeForm productId={productId} />
-
-      {reorderError && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {reorderError}
-        </p>
-      )}
-
-      {orderedSizes.length === 0 ? (
-        <div className="rounded border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
-          Este producto no tiene talles configurados.
-        </div>
-      ) : (
-        <ul className="space-y-2">
-          {orderedSizes.map((size, index) => (
-            <SizeRow
-              key={size.id}
-              productId={productId}
-              size={size}
-              index={index}
-              isFirst={index === 0}
-              isLast={index === orderedSizes.length - 1}
-              isReordering={isReordering}
-              onMove={moveSize}
-              onDragStart={() => {
-                dragIndexRef.current = index;
-              }}
-              onDragOver={(event) => event.preventDefault()}
-              onDrop={() => handleDrop(index)}
-            />
-          ))}
-        </ul>
-      )}
-    </section>
+        {orderedSizes.length === 0 ? (
+          <p className="rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+            Sin talles: se vende como medida única.
+          </p>
+        ) : (
+          <div>
+            <div className="flex items-center justify-between border-b pb-2 text-xs font-medium text-muted-foreground">
+              <span>Orden y talle</span>
+              <span className="mr-10">Disponible</span>
+            </div>
+            <ul className="divide-y">
+              {orderedSizes.map((size, index) => (
+                <SizeRow
+                  key={size.id}
+                  productId={productId}
+                  size={size}
+                  index={index}
+                  isFirst={index === 0}
+                  isLast={index === orderedSizes.length - 1}
+                  isReordering={isReordering}
+                  onMove={moveSize}
+                  onDragStart={() => {
+                    dragIndexRef.current = index;
+                  }}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={() => handleDrop(index)}
+                />
+              ))}
+            </ul>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

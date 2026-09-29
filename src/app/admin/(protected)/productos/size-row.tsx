@@ -1,12 +1,39 @@
 "use client";
 
-import { useActionState, useState, type DragEvent } from "react";
+import { useState, type DragEvent } from "react";
 import {
-  updateProductSize,
-  type ProductSizeActionState,
-} from "@/actions/productSizes";
-import { ToggleSizeAvailabilityButton } from "./toggle-size-availability-button";
-import { DeleteSizeButton } from "./delete-size-button";
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import { deleteProductSize, updateProductSize } from "@/actions/productSizes";
+import { useFormAction } from "@/hooks/use-form-action";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { ConfirmDeleteDialog } from "@/components/admin/confirm-delete-dialog";
+import { SizeAvailabilitySwitch } from "./size-availability-switch";
 
 type ProductSize = {
   id: string;
@@ -15,7 +42,74 @@ type ProductSize = {
   position: number;
 };
 
-const initialState: ProductSizeActionState = { error: null };
+function EditSizeDialog({
+  productId,
+  size,
+  open,
+  onOpenChange,
+}: {
+  productId: string;
+  size: ProductSize;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { handleSubmit, pending } = useFormAction(updateProductSize, {
+    successMessage: "Talle actualizado",
+    onSuccess: () => onOpenChange(false),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <form onSubmit={handleSubmit} className="grid gap-5">
+          <DialogHeader>
+            <DialogTitle>Editar talle</DialogTitle>
+            <DialogDescription>
+              Los cambios se ven en la tienda al instante.
+            </DialogDescription>
+          </DialogHeader>
+
+          <input type="hidden" name="productId" value={productId} />
+          <input type="hidden" name="sizeId" value={size.id} />
+
+          <div className="grid gap-2">
+            <Label htmlFor={`size-label-${size.id}`}>Talle</Label>
+            <Input
+              id={`size-label-${size.id}`}
+              name="label"
+              type="text"
+              required
+              minLength={1}
+              maxLength={30}
+              defaultValue={size.label}
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <Label htmlFor={`size-available-${size.id}`}>Disponible</Label>
+            <Switch
+              id={`size-available-${size.id}`}
+              name="available"
+              defaultChecked={size.available}
+            />
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" disabled={pending}>
+                Cancelar
+              </Button>
+            </DialogClose>
+            <Button type="submit" disabled={pending}>
+              {pending && <Loader2 className="animate-spin" aria-hidden="true" />}
+              {pending ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export function SizeRow({
   productId,
@@ -40,148 +134,97 @@ export function SizeRow({
   onDragOver: (event: DragEvent<HTMLLIElement>) => void;
   onDrop: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [state, formAction, pending] = useActionState(
-    updateProductSize,
-    initialState,
-  );
-
-  // Cierra el modo edición al guardar sin error, ajustando el estado
-  // durante el render en vez de en un efecto (mismo patrón que CategoryRow).
-  const [handledState, setHandledState] = useState(state);
-  if (state !== handledState) {
-    setHandledState(state);
-    if (state !== initialState && state.error === null) {
-      setEditing(false);
-    }
-  }
-
-  if (editing) {
-    return (
-      <li className="rounded border border-zinc-200 p-3 dark:border-zinc-800">
-        <form action={formAction} className="flex flex-wrap items-end gap-3">
-          <input type="hidden" name="productId" value={productId} />
-          <input type="hidden" name="sizeId" value={size.id} />
-
-          <div>
-            <label
-              htmlFor={`size-label-${size.id}`}
-              className="block text-xs font-medium"
-            >
-              Talle
-            </label>
-            <input
-              id={`size-label-${size.id}`}
-              name="label"
-              type="text"
-              required
-              minLength={1}
-              maxLength={30}
-              defaultValue={size.label}
-              className="mt-1 rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-transparent"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              id={`size-available-${size.id}`}
-              name="available"
-              type="checkbox"
-              defaultChecked={size.available}
-              className="h-4 w-4"
-            />
-            <label
-              htmlFor={`size-available-${size.id}`}
-              className="text-sm font-medium"
-            >
-              Disponible
-            </label>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={pending}
-              className="rounded bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-            >
-              {pending ? "Guardando..." : "Guardar"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditing(false)}
-              disabled={pending}
-              className="rounded border border-zinc-300 px-3 py-1.5 text-sm disabled:opacity-50 dark:border-zinc-700"
-            >
-              Cancelar
-            </button>
-          </div>
-
-          {state.error && (
-            <p
-              role="alert"
-              className="w-full text-sm text-red-600 dark:text-red-400"
-            >
-              {state.error}
-            </p>
-          )}
-        </form>
-      </li>
-    );
-  }
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
     <li
-      draggable
+      draggable={!isReordering}
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDrop={onDrop}
-      className="flex flex-wrap items-center justify-between gap-3 rounded border border-zinc-200 p-3 dark:border-zinc-800"
+      className="flex items-center gap-2 py-2"
     >
-      <div className="flex items-center gap-3">
-        <div className="flex flex-col gap-0.5">
-          <button
-            type="button"
-            onClick={() => onMove(index, -1)}
-            disabled={isFirst || isReordering}
-            aria-label={`Mover talle ${size.label} hacia arriba`}
-            className="rounded border border-zinc-300 px-1.5 text-xs disabled:opacity-40 dark:border-zinc-700"
-          >
-            ↑
-          </button>
-          <button
-            type="button"
-            onClick={() => onMove(index, 1)}
-            disabled={isLast || isReordering}
-            aria-label={`Mover talle ${size.label} hacia abajo`}
-            className="rounded border border-zinc-300 px-1.5 text-xs disabled:opacity-40 dark:border-zinc-700"
-          >
-            ↓
-          </button>
-        </div>
-
-        <span className="font-medium">{size.label}</span>
-
-        <ToggleSizeAvailabilityButton
-          productId={productId}
-          sizeId={size.id}
-          available={size.available}
-        />
-      </div>
-
-      <div className="flex items-center gap-3">
-        <button
+      <GripVertical
+        className="hidden size-4 shrink-0 cursor-grab text-muted-foreground sm:block"
+        aria-hidden="true"
+      />
+      <div className="flex shrink-0">
+        <Button
           type="button"
-          onClick={() => setEditing(true)}
-          className="text-sm hover:underline"
+          variant="ghost"
+          size="icon"
+          className="size-8"
+          onClick={() => onMove(index, -1)}
+          disabled={isFirst || isReordering}
+          aria-label={`Mover talle ${size.label} hacia arriba`}
         >
-          Editar
-        </button>
-        <DeleteSizeButton
-          productId={productId}
-          sizeId={size.id}
-          sizeLabel={size.label}
-        />
+          <ChevronUp />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-8"
+          onClick={() => onMove(index, 1)}
+          disabled={isLast || isReordering}
+          aria-label={`Mover talle ${size.label} hacia abajo`}
+        >
+          <ChevronDown />
+        </Button>
       </div>
+
+      <span className="min-w-0 flex-1 truncate font-medium">{size.label}</span>
+
+      <SizeAvailabilitySwitch
+        productId={productId}
+        sizeId={size.id}
+        sizeLabel={size.label}
+        available={size.available}
+      />
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            aria-label={`Acciones para el talle ${size.label}`}
+          >
+            <MoreHorizontal />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+            <Pencil />
+            Editar
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            onSelect={() => setDeleteOpen(true)}
+          >
+            <Trash2 />
+            Eliminar
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <EditSizeDialog
+        productId={productId}
+        size={size}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title={`¿Eliminar el talle "${size.label}"?`}
+        description="Deja de ofrecerse en la tienda. Si es algo temporal, podés marcarlo como no disponible."
+        action={deleteProductSize}
+        fields={{ productId, sizeId: size.id }}
+        successMessage="Talle eliminado"
+      />
     </li>
   );
 }

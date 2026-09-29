@@ -1,18 +1,29 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ExternalLink, SearchX } from "lucide-react";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import { updateProduct } from "@/actions/products";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/admin/page-header";
+import { EmptyState } from "@/components/admin/empty-state";
 import { ProductForm } from "../product-form";
 import { ProductImages } from "../product-images";
 import { ProductSizes } from "../product-sizes";
+import { DeleteProductButton } from "./delete-product-button";
+import { CreatedToast } from "./created-toast";
+
+export const metadata: Metadata = {
+  title: "Editar producto",
+};
 
 export default async function EditarProductoPage({
   params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+  searchParams,
+}: PageProps<"/admin/productos/[id]">) {
+  const [{ id }, { creado }] = await Promise.all([params, searchParams]);
   const business = await getCurrentBusiness();
 
   if (!business) {
@@ -58,38 +69,61 @@ export default async function EditarProductoPage({
 
   if (!product) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center gap-4 px-4 text-center">
-        <h1 className="text-2xl font-semibold">Producto no encontrado</h1>
-        <p className="text-zinc-600 dark:text-zinc-400">
-          El producto que buscás no existe o no pertenece a tu negocio.
-        </p>
-        <Link
-          href="/admin/productos"
-          className="inline-block rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
-        >
-          Volver al listado
-        </Link>
-      </main>
+      <EmptyState
+        icon={SearchX}
+        title="Producto no encontrado"
+        description="El producto que buscás no existe o fue eliminado."
+        action={
+          <Button asChild variant="outline">
+            <Link href="/admin/productos">Volver a productos</Link>
+          </Button>
+        }
+      />
     );
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-4 py-12">
-      <div>
-        <h1 className="text-2xl font-semibold">Editar producto</h1>
-        <Link
-          href="/admin/productos"
-          className="text-sm text-zinc-500 hover:underline"
-        >
-          Volver al listado
-        </Link>
-      </div>
+    <>
+      {creado === "1" && <CreatedToast />}
+
+      <PageHeader
+        title={
+          <span className="flex items-center gap-3">
+            <span className="truncate">{product.name}</span>
+            {!product.available && <Badge variant="secondary">Oculto</Badge>}
+          </span>
+        }
+        actions={
+          <>
+            {product.available && (
+              <Button asChild variant="outline">
+                <a
+                  href={`/productos/${product.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink />
+                  Ver en la tienda
+                </a>
+              </Button>
+            )}
+            <DeleteProductButton
+              productId={product.id}
+              productName={product.name}
+            />
+          </>
+        }
+      />
 
       <ProductForm
+        // Remonta el formulario con los valores guardados tras cada
+        // revalidación, para que defaultValue refleje lo persistido.
+        key={JSON.stringify(product)}
         action={updateProduct}
         categories={categories ?? []}
         submitLabel="Guardar cambios"
         pendingLabel="Guardando..."
+        successMessage="Cambios guardados"
         showSlugField
         defaultValues={{
           productId: product.id,
@@ -106,6 +140,6 @@ export default async function EditarProductoPage({
       <ProductImages productId={product.id} images={images ?? []} />
 
       <ProductSizes productId={product.id} sizes={sizes ?? []} />
-    </main>
+    </>
   );
 }

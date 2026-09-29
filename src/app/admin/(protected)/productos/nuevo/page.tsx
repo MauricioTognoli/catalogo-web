@@ -1,9 +1,14 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import { createProduct } from "@/actions/products";
+import { PageHeader } from "@/components/admin/page-header";
 import { ProductForm } from "../product-form";
+
+export const metadata: Metadata = {
+  title: "Nuevo producto",
+};
 
 export default async function NuevoProductoPage() {
   const business = await getCurrentBusiness();
@@ -24,23 +29,18 @@ export default async function NuevoProductoPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-4 py-12">
-      <div>
-        <h1 className="text-2xl font-semibold">Nuevo producto</h1>
-        <Link
-          href="/admin/productos"
-          className="text-sm text-zinc-500 hover:underline"
-        >
-          Volver al listado
-        </Link>
-      </div>
+    <>
+      <PageHeader
+        title="Nuevo producto"
+        description="Al crearlo vas a poder cargarle fotos y talles."
+      />
 
       <ProductForm
         action={createProduct}
         categories={categories ?? []}
-        submitLabel="Crear producto"
+        submitLabel="Crear y continuar"
         pendingLabel="Creando..."
       />
-    </main>
+    </>
   );
 }

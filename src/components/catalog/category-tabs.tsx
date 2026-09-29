@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/catalog/ui/tabs";
 import { ProductGrid } from "./product-grid";
 import type { PublicCategory } from "@/lib/catalog/categories";
 import type { PublicProductCard } from "@/lib/catalog/products";

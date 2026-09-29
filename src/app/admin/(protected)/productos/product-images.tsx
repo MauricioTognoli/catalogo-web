@@ -1,8 +1,20 @@
 "use client";
 
 import Image from "next/image";
-import { useId, useRef, useState, type ChangeEvent } from "react";
+import { useId, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { ChevronLeft, ChevronRight, ImagePlus, Loader2, X } from "lucide-react";
+import { toast } from "sonner";
 import { reorderProductImages, uploadProductImage } from "@/actions/productImages";
+import { cn } from "@/lib/utils/cn";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { DeleteImageButton } from "./delete-image-button";
 
 const MAX_FILE_SIZE_MB = 5;
@@ -18,9 +30,19 @@ type PendingFile = {
   key: string;
   file: File;
   previewUrl: string;
-  status: "pending" | "uploading" | "error" | "done";
+  status: "uploading" | "error";
   error?: string;
 };
+
+function validateFile(file: File): string | null {
+  if (!ACCEPTED_MIME_TYPES.includes(file.type)) {
+    return "Formato no permitido.";
+  }
+  if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+    return `Supera los ${MAX_FILE_SIZE_MB} MB.`;
+  }
+  return null;
+}
 
 export function ProductImages({
   productId,
@@ -43,74 +65,44 @@ export function ProductImages({
   }
 
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
-  const [reorderError, setReorderError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   const dragIndexRef = useRef<number | null>(null);
 
-  function handleFileSelect(event: ChangeEvent<HTMLInputElement>) {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+  const isUploading = pendingFiles.some((item) => item.status === "uploading");
 
-    const next: PendingFile[] = Array.from(files).map((file) => ({
-      key: `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID()}`,
-      file,
-      previewUrl: URL.createObjectURL(file),
-      status: "pending",
-    }));
-
-    setPendingFiles((prev) => [...prev, ...next]);
-    event.target.value = "";
+  function updatePending(key: string, patch: Partial<PendingFile>) {
+    setPendingFiles((prev) =>
+      prev.map((item) => (item.key === key ? { ...item, ...patch } : item)),
+    );
   }
 
   function removePendingFile(key: string) {
     setPendingFiles((prev) => {
       const target = prev.find((item) => item.key === key);
-      if (target) {
-        URL.revokeObjectURL(target.previewUrl);
-      }
+      if (target) URL.revokeObjectURL(target.previewUrl);
       return prev.filter((item) => item.key !== key);
     });
   }
 
-  async function handleUploadAll() {
-    setIsUploading(true);
+  // Las fotos se suben apenas se eligen: no hace falta un segundo paso.
+  // Se suben de a una para conservar el orden de selección.
+  async function uploadFiles(files: File[]) {
+    const batch: PendingFile[] = files.map((file) => {
+      const error = validateFile(file);
+      return {
+        key: `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID()}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        status: error ? "error" : "uploading",
+        error: error ?? undefined,
+      };
+    });
+    setPendingFiles((prev) => [...prev, ...batch]);
 
-    for (const pending of pendingFiles) {
-      if (pending.status === "done") continue;
-
-      if (!ACCEPTED_MIME_TYPES.includes(pending.file.type)) {
-        setPendingFiles((prev) =>
-          prev.map((item) =>
-            item.key === pending.key
-              ? { ...item, status: "error", error: "Formato no permitido." }
-              : item,
-          ),
-        );
-        continue;
-      }
-
-      if (pending.file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-        setPendingFiles((prev) =>
-          prev.map((item) =>
-            item.key === pending.key
-              ? {
-                  ...item,
-                  status: "error",
-                  error: `Supera el máximo de ${MAX_FILE_SIZE_MB} MB.`,
-                }
-              : item,
-          ),
-        );
-        continue;
-      }
-
-      setPendingFiles((prev) =>
-        prev.map((item) =>
-          item.key === pending.key ? { ...item, status: "uploading" } : item,
-        ),
-      );
+    let uploaded = 0;
+    for (const pending of batch) {
+      if (pending.status === "error") continue;
 
       const formData = new FormData();
       formData.append("productId", productId);
@@ -118,34 +110,46 @@ export function ProductImages({
 
       const result = await uploadProductImage(formData);
 
-      setPendingFiles((prev) =>
-        prev.map((item) =>
-          item.key === pending.key
-            ? result.error
-              ? { ...item, status: "error", error: result.error }
-              : { ...item, status: "done" }
-            : item,
-        ),
-      );
+      if (result.error) {
+        updatePending(pending.key, { status: "error", error: result.error });
+      } else {
+        uploaded += 1;
+        // Ya aparece en la grilla (el servidor revalidó la página).
+        removePendingFile(pending.key);
+      }
     }
 
-    setIsUploading(false);
+    const failed = batch.length - uploaded;
+    if (uploaded > 0) {
+      toast.success(
+        uploaded === 1 ? "Imagen subida" : `${uploaded} imágenes subidas`,
+      );
+    }
+    if (failed > 0) {
+      toast.error(
+        failed === 1
+          ? "Una imagen no se pudo subir"
+          : `${failed} imágenes no se pudieron subir`,
+      );
+    }
   }
 
-  function clearDoneFiles() {
-    setPendingFiles((prev) => {
-      const remaining = prev.filter((item) => item.status !== "done");
-      prev
-        .filter((item) => item.status === "done")
-        .forEach((item) => URL.revokeObjectURL(item.previewUrl));
-      return remaining;
-    });
+  function handleFileSelect(event: ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files;
+    if (files && files.length > 0) void uploadFiles(Array.from(files));
+    event.target.value = "";
+  }
+
+  function handleFileDrop(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    setIsDraggingFiles(false);
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length > 0) void uploadFiles(files);
   }
 
   async function persistOrder(newOrder: ProductImage[]) {
     setOrderedImages(newOrder);
     setIsReordering(true);
-    setReorderError(null);
 
     const result = await reorderProductImages(
       productId,
@@ -153,7 +157,7 @@ export function ProductImages({
     );
 
     if (result.error) {
-      setReorderError(result.error);
+      toast.error(result.error);
       setOrderedImages(images);
     }
 
@@ -181,132 +185,35 @@ export function ProductImages({
     void persistOrder(next);
   }
 
-  const hasPendingFiles = pendingFiles.length > 0;
-  const doneCount = pendingFiles.filter((item) => item.status === "done").length;
-
   return (
-    <section className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold">Imágenes</h2>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          La primera imagen es la principal del producto.
-        </p>
-      </div>
-
-      <div className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
-        <label htmlFor={fileInputId} className="block text-sm font-medium">
-          Agregar imágenes
-        </label>
-        <input
-          ref={fileInputRef}
-          id={fileInputId}
-          type="file"
-          multiple
-          accept="image/jpeg,image/png,image/webp"
-          onChange={handleFileSelect}
-          aria-describedby={`${fileInputId}-hint`}
-          className="mt-1 block w-full text-sm"
-        />
-        <p id={`${fileInputId}-hint`} className="mt-1 text-xs text-zinc-500">
-          JPG, PNG o WEBP. Máximo {MAX_FILE_SIZE_MB} MB por archivo.
-        </p>
-
-        {hasPendingFiles && (
-          <ul className="mt-4 flex flex-wrap gap-3">
-            {pendingFiles.map((pending) => (
-              <li
-                key={pending.key}
-                className="flex w-28 flex-col items-center gap-1 text-center"
-              >
-                <div className="relative h-20 w-20 overflow-hidden rounded bg-zinc-100 dark:bg-zinc-900">
-                  {/* Preview local antes de subir: blob URL, no un recurso
-                      remoto, por eso <img> en vez de next/image acá. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={pending.previewUrl}
-                    alt={`Vista previa de ${pending.file.name}`}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <p className="w-full truncate text-xs" title={pending.file.name}>
-                  {pending.file.name}
-                </p>
-                {pending.status === "uploading" && (
-                  <p className="text-xs text-zinc-500">Subiendo...</p>
-                )}
-                {pending.status === "error" && (
-                  <p role="alert" className="text-xs text-red-600 dark:text-red-400">
-                    {pending.error}
-                  </p>
-                )}
-                {pending.status === "done" && (
-                  <p className="text-xs text-green-700 dark:text-green-400">
-                    Subida ✓
-                  </p>
-                )}
-                {pending.status !== "uploading" && pending.status !== "done" && (
-                  <button
-                    type="button"
-                    onClick={() => removePendingFile(pending.key)}
-                    className="text-xs text-zinc-500 hover:underline"
-                  >
-                    Quitar
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {hasPendingFiles && (
-          <div className="mt-4 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleUploadAll}
-              disabled={isUploading}
-              className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-            >
-              {isUploading
-                ? "Subiendo..."
-                : `Subir ${pendingFiles.length} imagen${pendingFiles.length === 1 ? "" : "es"}`}
-            </button>
-            {doneCount > 0 && !isUploading && (
-              <button
-                type="button"
-                onClick={clearDoneFiles}
-                className="text-sm text-zinc-500 hover:underline"
-              >
-                Limpiar subidas
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {reorderError && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {reorderError}
-        </p>
-      )}
-
-      {orderedImages.length === 0 ? (
-        <div className="rounded border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
-          Todavía no hay imágenes para este producto.
-        </div>
-      ) : (
-        <ul className="flex flex-wrap gap-4">
+    <Card>
+      <CardHeader>
+        <CardTitle>Imágenes</CardTitle>
+        <CardDescription>
+          La primera es la principal. Arrastralas o usá las flechas para
+          cambiar el orden.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {orderedImages.map((image, index) => (
             <li
               key={image.id}
-              draggable
+              draggable={!isReordering}
               onDragStart={() => {
                 dragIndexRef.current = index;
               }}
-              onDragOver={(event) => event.preventDefault()}
+              onDragEnd={() => {
+                dragIndexRef.current = null;
+              }}
+              onDragOver={(event) => {
+                // Solo reordenamiento interno; los archivos van a la zona de carga.
+                if (dragIndexRef.current !== null) event.preventDefault();
+              }}
               onDrop={() => handleDrop(index)}
-              className="flex w-32 flex-col items-center gap-2 rounded border border-zinc-200 p-2 dark:border-zinc-800"
+              className="group overflow-hidden rounded-lg border bg-card"
             >
-              <div className="relative h-24 w-24 overflow-hidden rounded bg-zinc-100 dark:bg-zinc-900">
+              <div className="relative aspect-square cursor-grab bg-muted active:cursor-grabbing">
                 <Image
                   src={image.url}
                   alt={
@@ -315,43 +222,133 @@ export function ProductImages({
                       : `Imagen ${index + 1} del producto`
                   }
                   fill
-                  sizes="96px"
+                  sizes="(min-width: 1024px) 200px, 50vw"
                   className="object-cover"
                 />
+                {index === 0 && (
+                  <Badge className="absolute top-2 left-2">Principal</Badge>
+                )}
               </div>
-
-              {index === 0 && (
-                <span className="rounded bg-zinc-900 px-2 py-0.5 text-xs font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
-                  Principal
-                </span>
-              )}
-
-              <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => moveImage(index, -1)}
-                  disabled={index === 0 || isReordering}
-                  aria-label="Mover imagen hacia arriba en el orden"
-                  className="rounded border border-zinc-300 px-2 py-1 text-xs disabled:opacity-40 dark:border-zinc-700"
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveImage(index, 1)}
-                  disabled={index === orderedImages.length - 1 || isReordering}
-                  aria-label="Mover imagen hacia abajo en el orden"
-                  className="rounded border border-zinc-300 px-2 py-1 text-xs disabled:opacity-40 dark:border-zinc-700"
-                >
-                  ↓
-                </button>
+              <div className="flex items-center justify-between gap-1 p-1">
+                <div className="flex">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
+                    onClick={() => moveImage(index, -1)}
+                    disabled={index === 0 || isReordering}
+                    aria-label="Mover antes"
+                  >
+                    <ChevronLeft />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
+                    onClick={() => moveImage(index, 1)}
+                    disabled={index === orderedImages.length - 1 || isReordering}
+                    aria-label="Mover después"
+                  >
+                    <ChevronRight />
+                  </Button>
+                </div>
+                <DeleteImageButton productId={productId} imageId={image.id} />
               </div>
-
-              <DeleteImageButton productId={productId} imageId={image.id} />
             </li>
           ))}
+
+          {pendingFiles.map((pending) => (
+            <li
+              key={pending.key}
+              className="overflow-hidden rounded-lg border bg-card"
+            >
+              <div className="relative aspect-square bg-muted">
+                {/* Preview local antes de subir: blob URL, no un recurso
+                    remoto, por eso <img> en vez de next/image acá. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={pending.previewUrl}
+                  alt={`Vista previa de ${pending.file.name}`}
+                  className={cn(
+                    "h-full w-full object-cover",
+                    pending.status === "uploading" && "opacity-50",
+                  )}
+                />
+                {pending.status === "uploading" && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="size-6 animate-spin" aria-label="Subiendo" />
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center justify-between gap-1 p-1 pl-2">
+                <p
+                  role={pending.status === "error" ? "alert" : undefined}
+                  className={cn(
+                    "truncate text-xs",
+                    pending.status === "error"
+                      ? "text-destructive"
+                      : "text-muted-foreground",
+                  )}
+                  title={pending.error ?? pending.file.name}
+                >
+                  {pending.status === "error" ? pending.error : "Subiendo..."}
+                </p>
+                {pending.status === "error" && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
+                    onClick={() => removePendingFile(pending.key)}
+                    aria-label={`Descartar ${pending.file.name}`}
+                  >
+                    <X />
+                  </Button>
+                )}
+              </div>
+            </li>
+          ))}
+
+          <li className={cn(orderedImages.length + pendingFiles.length === 0 && "col-span-full")}>
+            <label
+              htmlFor={fileInputId}
+              onDragOver={(event) => {
+                if (dragIndexRef.current !== null) return;
+                event.preventDefault();
+                setIsDraggingFiles(true);
+              }}
+              onDragLeave={() => setIsDraggingFiles(false)}
+              onDrop={handleFileDrop}
+              className={cn(
+                "flex h-full min-h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-4 text-center transition-colors hover:bg-accent/50 has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50",
+                isDraggingFiles && "border-primary bg-accent",
+              )}
+            >
+              <ImagePlus className="size-6 text-muted-foreground" aria-hidden="true" />
+              <span className="text-sm font-medium">
+                {isUploading ? "Subiendo..." : "Agregar imágenes"}
+              </span>
+              <span
+                id={`${fileInputId}-hint`}
+                className="text-xs text-muted-foreground"
+              >
+                JPG, PNG o WEBP · hasta {MAX_FILE_SIZE_MB} MB
+              </span>
+              <input
+                id={fileInputId}
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleFileSelect}
+                aria-describedby={`${fileInputId}-hint`}
+                className="sr-only"
+              />
+            </label>
+          </li>
         </ul>
-      )}
-    </section>
+      </CardContent>
+    </Card>
   );
 }

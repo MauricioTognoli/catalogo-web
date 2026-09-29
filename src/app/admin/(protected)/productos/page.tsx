@@ -1,122 +1,125 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { PackagePlus } from "lucide-react";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
-import { formatPrice } from "@/lib/utils/formatPrice";
-import { ToggleAvailabilityButton } from "./toggle-availability-button";
+import { ALL_CATEGORIES, parseStatusFilter } from "@/lib/admin/product-filters";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/admin/page-header";
+import { BusinessRequired } from "@/components/admin/business-required";
+import { ProductsTable, type ProductTableRow } from "./products-table";
+
+export const metadata: Metadata = {
+  title: "Productos",
+};
 
 type ProductListRow = {
   id: string;
   name: string;
+  slug: string;
   price: number;
   material: string | null;
   available: boolean;
+  category_id: string | null;
   // category_id es una FK "muchos a uno": PostgREST devuelve un único
   // objeto (o null), no un array. Sin tipos generados de Supabase, el
   // cliente infiere "any[]" por defecto; se corrige con `.returns<T>()`.
   category: { name: string } | null;
+  product_image: { url: string; position: number }[];
 };
 
-export default async function ProductosPage() {
+function firstParam(value: string | string[] | undefined): string {
+  return (Array.isArray(value) ? value[0] : value) ?? "";
+}
+
+export default async function ProductosPage({
+  searchParams,
+}: PageProps<"/admin/productos">) {
   const business = await getCurrentBusiness();
 
   if (!business) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center gap-4 px-4 text-center">
-        <h1 className="text-2xl font-semibold">Productos</h1>
-        <p className="text-zinc-600 dark:text-zinc-400">
-          Necesitás configurar tu negocio antes de crear productos.
-        </p>
-        <Link
-          href="/admin/configuracion"
-          className="inline-block rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
-        >
-          Configurar negocio
-        </Link>
-      </main>
+      <>
+        <PageHeader title="Productos" />
+        <BusinessRequired description="Necesitás configurar tu negocio antes de cargar productos." />
+      </>
     );
   }
 
   const supabase = await createClient();
-  const { data: products, error } = await supabase
-    .from("product")
-    .select("id, name, price, material, available, category:category_id(name)")
-    .eq("business_id", business.id)
-    .order("created_at", { ascending: false })
-    .returns<ProductListRow[]>();
+  const [
+    { data: products, error: productsError },
+    { data: categories, error: categoriesError },
+    params,
+  ] = await Promise.all([
+    supabase
+      .from("product")
+      .select(
+        "id, name, slug, price, material, available, category_id, category:category_id(name), product_image(url, position)",
+      )
+      .eq("business_id", business.id)
+      .order("created_at", { ascending: false })
+      .returns<ProductListRow[]>(),
+    supabase
+      .from("category")
+      .select("id, name")
+      .eq("business_id", business.id)
+      .order("position", { ascending: true }),
+    searchParams,
+  ]);
 
-  if (error) {
-    throw error;
+  if (productsError || categoriesError) {
+    throw productsError ?? categoriesError;
   }
 
-  return (
-    <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-8 px-4 py-12">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Productos</h1>
-          <p className="text-zinc-600 dark:text-zinc-400">
-            Gestioná el catálogo de tu negocio.
-          </p>
-        </div>
-        <Link
-          href="/admin/productos/nuevo"
-          className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium whitespace-nowrap text-white dark:bg-zinc-100 dark:text-zinc-900"
-        >
-          Nuevo producto
-        </Link>
-      </div>
+  const rows: ProductTableRow[] = products.map((product) => ({
+    id: product.id,
+    name: product.name,
+    slug: product.slug,
+    price: product.price,
+    material: product.material,
+    available: product.available,
+    categoryId: product.category_id,
+    categoryName: product.category?.name ?? null,
+    imageCount: product.product_image.length,
+    coverUrl:
+      [...product.product_image].sort((a, b) => a.position - b.position)[0]
+        ?.url ?? null,
+  }));
 
-      {products.length === 0 ? (
-        <div className="rounded border border-dashed border-zinc-300 p-8 text-center dark:border-zinc-700">
-          <p className="text-zinc-600 dark:text-zinc-400">
-            Todavía no tenés productos. Creá el primero con el botón de
-            arriba.
-          </p>
-        </div>
-      ) : (
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-zinc-200 text-xs uppercase text-zinc-500 dark:border-zinc-800">
-              <th className="py-2 font-medium">Nombre</th>
-              <th className="py-2 font-medium">Categoría</th>
-              <th className="py-2 font-medium">Precio</th>
-              <th className="py-2 font-medium">Material</th>
-              <th className="py-2 font-medium">Disponibilidad</th>
-              <th className="py-2 font-medium text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => (
-              <tr
-                key={product.id}
-                className="border-b border-zinc-200 dark:border-zinc-800"
-              >
-                <td className="py-3">{product.name}</td>
-                <td className="py-3 text-zinc-500">
-                  {product.category?.name ?? "Sin categoría"}
-                </td>
-                <td className="py-3">{formatPrice(product.price)}</td>
-                <td className="py-3 text-zinc-500">
-                  {product.material ?? "—"}
-                </td>
-                <td className="py-3">
-                  <ToggleAvailabilityButton
-                    productId={product.id}
-                    available={product.available}
-                  />
-                </td>
-                <td className="py-3 text-right">
-                  <Link
-                    href={`/admin/productos/${product.id}`}
-                    className="text-sm hover:underline"
-                  >
-                    Editar
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </main>
+  const query = firstParam(params.q);
+  const categoryParam = firstParam(params.categoria);
+  const categoryId = categories.some((category) => category.id === categoryParam)
+    ? categoryParam
+    : ALL_CATEGORIES;
+  const status = parseStatusFilter(firstParam(params.estado));
+
+  return (
+    <>
+      <PageHeader
+        title="Productos"
+        description="Todo lo que ofrecés en la tienda. Los ocultos no se muestran a tus clientes."
+        actions={
+          <Button asChild>
+            <Link href="/admin/productos/nuevo">
+              <PackagePlus />
+              Nuevo producto
+            </Link>
+          </Button>
+        }
+      />
+
+      <ProductsTable
+        // Remonta los filtros cuando se llega con otros parámetros (links
+        // del dashboard o del sidebar); los cambios hechos acá solo
+        // reescriben la URL y no disparan esta key.
+        key={`${query}|${categoryId}|${status}`}
+        products={rows}
+        categories={categories}
+        initialQuery={query}
+        initialCategoryId={categoryId}
+        initialStatus={status}
+      />
+    </>
   );
 }

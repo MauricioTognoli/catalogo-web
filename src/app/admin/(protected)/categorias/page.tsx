@@ -1,75 +1,113 @@
-import Link from "next/link";
+import type { Metadata } from "next";
+import { FolderTree } from "lucide-react";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
-import { CreateCategoryForm } from "./create-category-form";
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { PageHeader } from "@/components/admin/page-header";
+import { EmptyState } from "@/components/admin/empty-state";
+import { BusinessRequired } from "@/components/admin/business-required";
+import { CreateCategoryButton } from "./create-category-button";
 import { CategoryRow } from "./category-row";
 
-export default async function CategoriasPage() {
+export const metadata: Metadata = {
+  title: "Categorías",
+};
+
+type CategoryListRow = {
+  id: string;
+  name: string;
+  slug: string;
+  position: number;
+  // Agregado de PostgREST: una sola fila con el conteo de productos.
+  product: { count: number }[];
+};
+
+export default async function CategoriasPage({
+  searchParams,
+}: PageProps<"/admin/categorias">) {
   const business = await getCurrentBusiness();
 
   if (!business) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center gap-4 px-4 text-center">
-        <h1 className="text-2xl font-semibold">Categorías</h1>
-        <p className="text-zinc-600 dark:text-zinc-400">
-          Necesitás configurar tu negocio antes de crear categorías.
-        </p>
-        <Link
-          href="/admin/configuracion"
-          className="inline-block rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
-        >
-          Configurar negocio
-        </Link>
-      </main>
+      <>
+        <PageHeader title="Categorías" />
+        <BusinessRequired description="Necesitás configurar tu negocio antes de crear categorías." />
+      </>
     );
   }
 
   const supabase = await createClient();
-  const { data: categories, error } = await supabase
-    .from("category")
-    .select("id, name, slug, position")
-    .eq("business_id", business.id)
-    .order("position", { ascending: true });
+  const [{ data: categories, error }, { nueva }] = await Promise.all([
+    supabase
+      .from("category")
+      .select("id, name, slug, position, product(count)")
+      .eq("business_id", business.id)
+      .order("position", { ascending: true })
+      .returns<CategoryListRow[]>(),
+    searchParams,
+  ]);
 
   if (error) {
     throw error;
   }
 
-  return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 px-4 py-12">
-      <div>
-        <h1 className="text-2xl font-semibold">Categorías</h1>
-        <p className="text-zinc-600 dark:text-zinc-400">
-          Organizá los productos de tu catálogo en categorías.
-        </p>
-      </div>
+  const openCreate = nueva === "1";
 
-      <CreateCategoryForm />
+  return (
+    <>
+      <PageHeader
+        title="Categorías"
+        description="Agrupan tus productos en la tienda. Se muestran según su posición."
+        actions={
+          categories.length > 0 && <CreateCategoryButton defaultOpen={openCreate} />
+        }
+      />
 
       {categories.length === 0 ? (
-        <div className="rounded border border-dashed border-zinc-300 p-8 text-center dark:border-zinc-700">
-          <p className="text-zinc-600 dark:text-zinc-400">
-            Todavía no tenés categorías. Creá la primera con el formulario de
-            arriba.
-          </p>
-        </div>
+        <EmptyState
+          icon={FolderTree}
+          title="Todavía no tenés categorías"
+          description="Ayudan a tus clientes a encontrar lo que buscan: anillos, aros, collares..."
+          action={
+            <CreateCategoryButton
+              defaultOpen={openCreate}
+              label="Crear la primera"
+            />
+          }
+        />
       ) : (
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-zinc-200 text-xs uppercase text-zinc-500 dark:border-zinc-800">
-              <th className="py-2 font-medium">Nombre</th>
-              <th className="py-2 font-medium">Slug</th>
-              <th className="py-2 font-medium">Posición</th>
-              <th className="py-2 font-medium text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {categories.map((category) => (
-              <CategoryRow key={category.id} category={category} />
-            ))}
-          </tbody>
-        </table>
+        <div className="overflow-hidden rounded-xl border">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead className="pl-4">Nombre</TableHead>
+                <TableHead className="w-28 text-right">Productos</TableHead>
+                <TableHead className="hidden w-24 text-right sm:table-cell">
+                  Posición
+                </TableHead>
+                <TableHead className="w-14 pr-4">
+                  <span className="sr-only">Acciones</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {categories.map(({ product, ...category }) => (
+                <CategoryRow
+                  key={category.id}
+                  category={category}
+                  productCount={product[0]?.count ?? 0}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
-    </main>
+    </>
   );
 }

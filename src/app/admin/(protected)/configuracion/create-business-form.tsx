@@ -1,84 +1,93 @@
 "use client";
 
-import { useActionState } from "react";
-import { createBusiness, type CreateBusinessState } from "@/actions/business";
-
-const initialState: CreateBusinessState = { error: null };
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { createBusiness } from "@/actions/business";
+import { slugify } from "@/lib/utils/slugify";
+import { useFormAction } from "@/hooks/use-form-action";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export function CreateBusinessForm() {
-  const [state, formAction, pending] = useActionState(
-    createBusiness,
-    initialState,
-  );
+  // La acción redirige al dashboard al terminar: sin toast de éxito.
+  const { handleSubmit, pending, error } = useFormAction(createBusiness);
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugEdited, setSlugEdited] = useState(false);
 
   return (
-    <form action={formAction} className="w-full max-w-sm space-y-4">
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium">
-          Nombre del negocio
-        </label>
-        <input
+    <form onSubmit={handleSubmit} className="grid gap-5">
+      <div className="grid gap-2">
+        <Label htmlFor="name">Nombre de la joyería</Label>
+        <Input
           id="name"
           name="name"
           type="text"
           required
           minLength={2}
           maxLength={120}
-          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-transparent"
+          autoFocus
+          value={name}
+          onChange={(event) => {
+            setName(event.target.value);
+            // Sugerimos el slug a partir del nombre hasta que lo editen a mano.
+            if (!slugEdited) setSlug(slugify(event.target.value));
+          }}
         />
       </div>
 
-      <div>
-        <label htmlFor="slug" className="block text-sm font-medium">
-          Slug
-        </label>
-        <input
+      <div className="grid gap-2">
+        <Label htmlFor="slug">Identificador</Label>
+        <Input
           id="slug"
           name="slug"
           type="text"
           required
           pattern="[a-z0-9]+(-[a-z0-9]+)*"
-          placeholder="mi-negocio"
+          placeholder="mi-joyeria"
+          value={slug}
+          onChange={(event) => {
+            setSlugEdited(true);
+            setSlug(event.target.value);
+          }}
           aria-describedby="slug-hint"
-          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-transparent"
+          className="font-mono text-sm"
         />
-        <p id="slug-hint" className="mt-1 text-xs text-zinc-500">
-          Minúsculas, números y guiones. Ej: mi-negocio
+        <p id="slug-hint" className="text-xs text-muted-foreground">
+          Minúsculas, números y guiones.
         </p>
       </div>
 
-      <div>
-        <label htmlFor="whatsapp_number" className="block text-sm font-medium">
-          WhatsApp
-        </label>
-        <input
+      <div className="grid gap-2">
+        <Label htmlFor="whatsapp_number">WhatsApp para pedidos</Label>
+        <Input
           id="whatsapp_number"
           name="whatsapp_number"
           type="tel"
+          inputMode="numeric"
           required
           pattern="\d{6,15}"
           placeholder="5491122334455"
           aria-describedby="whatsapp-hint"
-          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-transparent"
+          className="tabular-nums"
         />
-        <p id="whatsapp-hint" className="mt-1 text-xs text-zinc-500">
-          Solo números, con código de país. Ej: 5491122334455
+        <p id="whatsapp-hint" className="text-xs text-muted-foreground">
+          Solo números, con código de país y de área. A este número llegan los
+          pedidos del carrito.
         </p>
       </div>
 
-      {state.error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {state.error}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-      >
+      <Button type="submit" disabled={pending} className="w-full">
+        {pending && <Loader2 className="animate-spin" aria-hidden="true" />}
         {pending ? "Creando..." : "Crear negocio"}
-      </button>
+      </Button>
     </form>
   );
 }

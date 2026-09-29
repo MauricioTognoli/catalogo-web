@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/catalog/ui/input";
 import { cn } from "@/lib/utils/cn";
 
 export function SearchForm({ className }: { className?: string }) {

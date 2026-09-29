@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 export type Business = {
@@ -19,8 +20,11 @@ export type Business = {
  * o si todavía no configuró ninguno. Usa el cliente Supabase estándar
  * (no service role): el filtro por owner_id es explícito y además queda
  * respaldado por la policy de RLS `business_select_own`.
+ *
+ * Envuelta en `cache()`: el layout del admin y cada página la llaman en
+ * el mismo request y solo debe consultar una vez.
  */
-export async function getCurrentBusiness(): Promise<Business | null> {
+export const getCurrentBusiness = cache(async (): Promise<Business | null> => {
   const supabase = await createClient();
 
   const {
@@ -42,4 +46,4 @@ export async function getCurrentBusiness(): Promise<Business | null> {
   }
 
   return data;
-}
+});

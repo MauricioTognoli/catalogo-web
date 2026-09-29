@@ -1,127 +1,122 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { updateBusiness, type UpdateBusinessState } from "@/actions/business";
+import { Loader2 } from "lucide-react";
+import { updateBusiness } from "@/actions/business";
 import type { Business } from "@/lib/business/getCurrentBusiness";
+import { useFormAction } from "@/hooks/use-form-action";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-const initialState: UpdateBusinessState = { error: null };
+function Optional() {
+  return <span className="font-normal text-muted-foreground">(opcional)</span>;
+}
 
 export function EditBusinessForm({ business }: { business: Business }) {
-  const [state, formAction, pending] = useActionState(
-    updateBusiness,
-    initialState,
-  );
-
-  // Mensaje de éxito temporal: se activa cuando la action devuelve sin
-  // error, ajustando el estado durante el render (mismo patrón que
-  // CategoryRow/ProductImages) en vez de un efecto.
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [handledState, setHandledState] = useState(state);
-  if (state !== handledState) {
-    setHandledState(state);
-    setShowSuccess(state !== initialState && state.error === null);
-  }
+  const { handleSubmit, pending, error } = useFormAction(updateBusiness, {
+    successMessage: "Cambios guardados",
+  });
 
   return (
-    <form
-      action={formAction}
-      onChange={() => setShowSuccess(false)}
-      className="w-full max-w-sm space-y-4"
-    >
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium">
-          Nombre del negocio
-        </label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          required
-          minLength={2}
-          maxLength={120}
-          defaultValue={business.name}
-          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-transparent"
-        />
-      </div>
+    <Card>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <CardHeader>
+          <CardTitle>Datos del negocio</CardTitle>
+          <CardDescription>
+            Se muestran en la tienda. El WhatsApp recibe los pedidos del carrito.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-5 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor="name">Nombre</Label>
+            <Input
+              id="name"
+              name="name"
+              type="text"
+              required
+              minLength={2}
+              maxLength={120}
+              defaultValue={business.name}
+            />
+          </div>
 
-      <div>
-        <label htmlFor="whatsapp_number" className="block text-sm font-medium">
-          WhatsApp
-        </label>
-        <input
-          id="whatsapp_number"
-          name="whatsapp_number"
-          type="tel"
-          required
-          pattern="\d{6,15}"
-          defaultValue={business.whatsapp_number}
-          aria-describedby="whatsapp-hint"
-          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-transparent"
-        />
-        <p id="whatsapp-hint" className="mt-1 text-xs text-zinc-500">
-          Solo números, con código de país. Ej: 5491122334455
-        </p>
-      </div>
+          <div className="grid gap-2">
+            <Label htmlFor="whatsapp_number">WhatsApp para pedidos</Label>
+            <Input
+              id="whatsapp_number"
+              name="whatsapp_number"
+              type="tel"
+              inputMode="numeric"
+              required
+              pattern="\d{6,15}"
+              defaultValue={business.whatsapp_number}
+              aria-describedby="whatsapp-hint"
+              className="tabular-nums"
+            />
+            <p id="whatsapp-hint" className="text-xs text-muted-foreground">
+              Solo números, con código de país. Ej: 5491122334455
+            </p>
+          </div>
 
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium">
-          Email <span className="text-zinc-400">(opcional)</span>
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          defaultValue={business.email ?? ""}
-          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-transparent"
-        />
-      </div>
+          <div className="grid gap-2">
+            <Label htmlFor="email">
+              Email <Optional />
+            </Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              defaultValue={business.email ?? ""}
+            />
+          </div>
 
-      <div>
-        <label htmlFor="address" className="block text-sm font-medium">
-          Dirección <span className="text-zinc-400">(opcional)</span>
-        </label>
-        <input
-          id="address"
-          name="address"
-          type="text"
-          defaultValue={business.address ?? ""}
-          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-transparent"
-        />
-      </div>
+          <div className="grid gap-2">
+            <Label htmlFor="instagram_url">
+              Instagram <Optional />
+            </Label>
+            <Input
+              id="instagram_url"
+              name="instagram_url"
+              type="url"
+              placeholder="https://instagram.com/tu-joyeria"
+              defaultValue={business.instagram_url ?? ""}
+            />
+          </div>
 
-      <div>
-        <label htmlFor="instagram_url" className="block text-sm font-medium">
-          Instagram <span className="text-zinc-400">(opcional)</span>
-        </label>
-        <input
-          id="instagram_url"
-          name="instagram_url"
-          type="url"
-          placeholder="https://instagram.com/tu-negocio"
-          defaultValue={business.instagram_url ?? ""}
-          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-transparent"
-        />
-      </div>
+          <div className="grid gap-2 sm:col-span-2">
+            <Label htmlFor="address">
+              Dirección <Optional />
+            </Label>
+            <Input
+              id="address"
+              name="address"
+              type="text"
+              placeholder="Calle, número, ciudad"
+              defaultValue={business.address ?? ""}
+            />
+          </div>
 
-      {state.error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {state.error}
-        </p>
-      )}
-
-      {showSuccess && (
-        <p className="text-sm text-green-700 dark:text-green-400">
-          Cambios guardados.
-        </p>
-      )}
-
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-      >
-        {pending ? "Guardando..." : "Guardar cambios"}
-      </button>
-    </form>
+          {error && (
+            <p role="alert" className="text-sm text-destructive sm:col-span-2">
+              {error}
+            </p>
+          )}
+        </CardContent>
+        <CardFooter className="justify-end border-t">
+          <Button type="submit" disabled={pending}>
+            {pending && <Loader2 className="animate-spin" aria-hidden="true" />}
+            {pending ? "Guardando..." : "Guardar cambios"}
+          </Button>
+        </CardFooter>
+      </form>
+    </Card>
   );
 }

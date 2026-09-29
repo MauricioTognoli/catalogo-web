@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils/slugify";
+import { getStoragePathFromPublicUrl } from "@/lib/storage/getStoragePathFromPublicUrl";
 
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const MAX_DESCRIPTION_LENGTH = 2000;
@@ -113,16 +114,20 @@ export async function createProduct(
     }
   }
 
-  const { error: insertError } = await supabase.from("product").insert({
-    business_id: business.id,
-    category_id: categoryId,
-    name,
-    slug,
-    description,
-    price,
-    material,
-    available,
-  });
+  const { data: createdProduct, error: insertError } = await supabase
+    .from("product")
+    .insert({
+      business_id: business.id,
+      category_id: categoryId,
+      name,
+      slug,
+      description,
+      price,
+      material,
+      available,
+    })
+    .select("id")
+    .single();
 
   if (insertError) {
     if (insertError.code === "23505") {
@@ -134,7 +139,10 @@ export async function createProduct(
   }
 
   revalidatePath("/admin/productos");
-  redirect("/admin/productos");
+  revalidatePath("/admin/dashboard");
+  // Se continúa en la edición: ahí se cargan imágenes y talles, que
+  // requieren que el producto ya exista.
+  redirect(`/admin/productos/${createdProduct.id}?creado=1`);
 }
 
 export async function updateProduct(
@@ -233,8 +241,9 @@ export async function updateProduct(
   }
 
   revalidatePath("/admin/productos");
+  revalidatePath("/admin/dashboard");
   revalidatePath(`/admin/productos/${productId}`);
-  redirect("/admin/productos");
+  return { error: null };
 }
 
 export async function toggleProductAvailability(
@@ -284,5 +293,72 @@ export async function toggleProductAvailability(
   }
 
   revalidatePath("/admin/productos");
+  return { error: null };
+}
+
+const PRODUCT_IMAGES_BUCKET = "product-images";
+
+export async function deleteProduct(
+  _prevState: ProductActionState,
+  formData: FormData,
+): Promise<ProductActionState> {
+  const business = await getCurrentBusiness();
+
+  if (!business) {
+    return {
+      error: "Necesitás configurar tu negocio antes de eliminar productos.",
+    };
+  }
+
+  const productId = String(formData.get("productId") ?? "").trim();
+
+  if (!productId) {
+    return { error: "Producto inválido." };
+  }
+
+  const supabase = await createClient();
+
+  const { data: existingProduct, error: fetchError } = await supabase
+    .from("product")
+    .select("id, product_image(url)")
+    .eq("id", productId)
+    .eq("business_id", business.id)
+    .maybeSingle();
+
+  if (fetchError) {
+    return { error: "No se pudo verificar el producto. Probá de nuevo." };
+  }
+
+  if (!existingProduct) {
+    return { error: "El producto no existe o no te pertenece." };
+  }
+
+  // product_image y product_size tienen ON DELETE CASCADE: al borrar el
+  // producto se borran sus filas. Los archivos de Storage no, por eso se
+  // resuelven sus paths antes del delete.
+  const imagePaths = (existingProduct.product_image as { url: string }[])
+    .map((image) =>
+      getStoragePathFromPublicUrl(image.url, PRODUCT_IMAGES_BUCKET),
+    )
+    .filter((path): path is string => path !== null);
+
+  const { error: deleteError } = await supabase
+    .from("product")
+    .delete()
+    .eq("id", productId)
+    .eq("business_id", business.id);
+
+  if (deleteError) {
+    return { error: "No se pudo eliminar el producto. Probá de nuevo." };
+  }
+
+  if (imagePaths.length > 0) {
+    // Best-effort: el producto ya no existe; si esto falla solo quedan
+    // archivos huérfanos en Storage, nada visible.
+    await supabase.storage.from(PRODUCT_IMAGES_BUCKET).remove(imagePaths);
+  }
+
+  revalidatePath("/admin/productos");
+  revalidatePath("/admin/dashboard");
   return { error: null };
 }

@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
-export function LogoutButton() {
+export function LogoutMenuItem() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -17,13 +19,16 @@ export function LogoutButton() {
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleLogout}
+    <DropdownMenuItem
       disabled={loading}
-      className="rounded border border-zinc-300 px-4 py-2 text-sm font-medium disabled:opacity-50 dark:border-zinc-700"
+      onSelect={(event) => {
+        // Evita que el menú se cierre antes de que termine el signOut.
+        event.preventDefault();
+        void handleLogout();
+      }}
     >
+      <LogOut />
       {loading ? "Cerrando sesión..." : "Cerrar sesión"}
-    </button>
+    </DropdownMenuItem>
   );
 }

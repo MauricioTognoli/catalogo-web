@@ -1,7 +1,29 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState } from "react";
+import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import type { ProductActionState } from "@/actions/products";
+import { useFormAction } from "@/hooks/use-form-action";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 
 type Category = {
   id: string;
@@ -27,166 +49,231 @@ type ProductFormProps = {
   categories: Category[];
   submitLabel: string;
   pendingLabel: string;
+  /** Toast al guardar. Omitido en el alta, que redirige a la edición. */
+  successMessage?: string;
   showSlugField?: boolean;
   defaultValues?: ProductFormDefaults;
 };
 
-const initialState: ProductActionState = { error: null };
+// Radix Select no admite "" como valor de un ítem.
+const NO_CATEGORY = "none";
 
 export function ProductForm({
   action,
   categories,
   submitLabel,
   pendingLabel,
+  successMessage,
   showSlugField = false,
   defaultValues,
 }: ProductFormProps) {
-  const [state, formAction, pending] = useActionState(action, initialState);
+  const { handleSubmit, pending, error } = useFormAction(action, {
+    successMessage,
+  });
+  const [categoryId, setCategoryId] = useState(
+    defaultValues?.categoryId ?? NO_CATEGORY,
+  );
+  const [available, setAvailable] = useState(defaultValues?.available ?? true);
 
   return (
-    <form action={formAction} className="max-w-xl space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {defaultValues?.productId && (
         <input type="hidden" name="productId" value={defaultValues.productId} />
       )}
 
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium">
-          Nombre
-        </label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          required
-          minLength={2}
-          maxLength={120}
-          defaultValue={defaultValues?.name}
-          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-transparent"
-        />
-      </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Información</CardTitle>
+            <CardDescription>Lo que ve el cliente en la ficha del producto.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-5">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Nombre</Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                required
+                minLength={2}
+                maxLength={120}
+                placeholder="Ej: Anillo solitario de oro"
+                defaultValue={defaultValues?.name}
+                aria-invalid={error ? true : undefined}
+              />
+            </div>
 
-      {showSlugField ? (
-        <div>
-          <label htmlFor="slug" className="block text-sm font-medium">
-            Slug
-          </label>
-          <input
-            id="slug"
-            name="slug"
-            type="text"
-            required
-            pattern="[a-z0-9]+(-[a-z0-9]+)*"
-            defaultValue={defaultValues?.slug}
-            aria-describedby="slug-hint"
-            className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-transparent"
-          />
-          <p id="slug-hint" className="mt-1 text-xs text-zinc-500">
-            Minúsculas, números y guiones.
-          </p>
+            <div className="grid gap-2">
+              <Label htmlFor="description">
+                Descripción{" "}
+                <span className="font-normal text-muted-foreground">(opcional)</span>
+              </Label>
+              <Textarea
+                id="description"
+                name="description"
+                rows={5}
+                maxLength={2000}
+                placeholder="Medidas, terminación, cuidados..."
+                defaultValue={defaultValues?.description ?? ""}
+                aria-describedby="description-hint"
+              />
+              <p id="description-hint" className="text-xs text-muted-foreground">
+                Hasta 2000 caracteres.
+              </p>
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="price">Precio</Label>
+                <div className="relative">
+                  <span
+                    className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground"
+                    aria-hidden="true"
+                  >
+                    $
+                  </span>
+                  <Input
+                    id="price"
+                    name="price"
+                    type="number"
+                    inputMode="decimal"
+                    required
+                    min={0}
+                    step="0.01"
+                    placeholder="0,00"
+                    defaultValue={defaultValues?.price}
+                    aria-describedby="price-hint"
+                    className="pl-7 tabular-nums"
+                  />
+                </div>
+                <p id="price-hint" className="text-xs text-muted-foreground">
+                  En pesos argentinos.
+                </p>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="material">
+                  Material{" "}
+                  <span className="font-normal text-muted-foreground">(opcional)</span>
+                </Label>
+                <Input
+                  id="material"
+                  name="material"
+                  type="text"
+                  maxLength={120}
+                  placeholder="Ej: Oro 18k, Plata 925"
+                  defaultValue={defaultValues?.material ?? ""}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Organización</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="grid gap-1">
+                  <Label htmlFor="available">Visible en la tienda</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {available
+                      ? "Los clientes lo ven y pueden agregarlo al carrito."
+                      : "Queda guardado, pero oculto para los clientes."}
+                  </p>
+                </div>
+                <Switch
+                  id="available"
+                  name="available"
+                  checked={available}
+                  onCheckedChange={setAvailable}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="category_id">Categoría</Label>
+                <input
+                  type="hidden"
+                  name="category_id"
+                  value={categoryId === NO_CATEGORY ? "" : categoryId}
+                />
+                <Select value={categoryId} onValueChange={setCategoryId}>
+                  <SelectTrigger id="category_id" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_CATEGORY}>Sin categoría</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {categories.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Todavía no tenés categorías.{" "}
+                    <Link
+                      href="/admin/categorias?nueva=1"
+                      className="font-medium text-foreground underline-offset-4 hover:underline"
+                    >
+                      Crear una
+                    </Link>
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Enlace</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {showSlugField ? (
+                <div className="grid gap-2">
+                  <Label htmlFor="slug">Slug</Label>
+                  <Input
+                    id="slug"
+                    name="slug"
+                    type="text"
+                    required
+                    pattern="[a-z0-9]+(-[a-z0-9]+)*"
+                    defaultValue={defaultValues?.slug}
+                    aria-describedby="slug-hint"
+                    className="font-mono text-sm"
+                  />
+                  <p id="slug-hint" className="text-xs text-muted-foreground">
+                    Parte final de la URL del producto. Minúsculas, números y guiones.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  La URL del producto se genera automáticamente a partir del nombre.
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
-      ) : (
-        <p className="text-xs text-zinc-500">
-          El slug se genera automáticamente a partir del nombre.
+      </div>
+
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
         </p>
       )}
 
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium">
-          Descripción
-        </label>
-        <textarea
-          id="description"
-          name="description"
-          rows={4}
-          maxLength={2000}
-          defaultValue={defaultValues?.description ?? ""}
-          aria-describedby="description-hint"
-          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-transparent"
-        />
-        <p id="description-hint" className="mt-1 text-xs text-zinc-500">
-          Opcional, hasta 2000 caracteres.
-        </p>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button asChild variant="outline">
+          <Link href="/admin/productos">Cancelar</Link>
+        </Button>
+        <Button type="submit" disabled={pending}>
+          {pending && <Loader2 className="animate-spin" aria-hidden="true" />}
+          {pending ? pendingLabel : submitLabel}
+        </Button>
       </div>
-
-      <div>
-        <label htmlFor="price" className="block text-sm font-medium">
-          Precio
-        </label>
-        <input
-          id="price"
-          name="price"
-          type="number"
-          required
-          min={0}
-          step="0.01"
-          defaultValue={defaultValues?.price}
-          aria-describedby="price-hint"
-          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-transparent"
-        />
-        <p id="price-hint" className="mt-1 text-xs text-zinc-500">
-          En pesos argentinos, sin símbolo (ej: 15000.50).
-        </p>
-      </div>
-
-      <div>
-        <label htmlFor="material" className="block text-sm font-medium">
-          Material
-        </label>
-        <input
-          id="material"
-          name="material"
-          type="text"
-          maxLength={120}
-          defaultValue={defaultValues?.material ?? ""}
-          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-transparent"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="category_id" className="block text-sm font-medium">
-          Categoría
-        </label>
-        <select
-          id="category_id"
-          name="category_id"
-          defaultValue={defaultValues?.categoryId ?? ""}
-          className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-transparent"
-        >
-          <option value="">Sin categoría</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <input
-          id="available"
-          name="available"
-          type="checkbox"
-          defaultChecked={defaultValues?.available ?? true}
-          className="h-4 w-4"
-        />
-        <label htmlFor="available" className="text-sm font-medium">
-          Disponible
-        </label>
-      </div>
-
-      {state.error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {state.error}
-        </p>
-      )}
-
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-      >
-        {pending ? pendingLabel : submitLabel}
-      </button>
     </form>
   );
 }
