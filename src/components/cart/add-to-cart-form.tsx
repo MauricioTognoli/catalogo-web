@@ -59,7 +59,9 @@ export function AddToCartForm({
       productSlug: product.slug,
       productName: product.name,
       productImageUrl: mainImageUrl,
+      // Precio vigente al agregar; el carrito lo revalida antes de enviar.
       unitPrice: product.price,
+      listPrice: product.compareAtPrice,
       quantity,
       sizeId: selectedSize?.id ?? null,
       sizeLabel: selectedSize?.label ?? null,

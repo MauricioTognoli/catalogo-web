@@ -28,6 +28,7 @@ function item(overrides: Partial<CartItem> = {}): CartItem {
     productName: "Producto",
     productImageUrl: null,
     unitPrice: 1000,
+    listPrice: null,
     quantity: 1,
     sizeId: null,
     sizeLabel: null,
@@ -344,5 +345,56 @@ describe("cálculos derivados (itemCount / subtotal) a partir del estado del red
     );
     expect(itemCount).toBe(0);
     expect(subtotal).toBe(0);
+  });
+});
+
+describe("cartReducer: precios de ofertas", () => {
+  it("al volver a agregar una línea, gana el precio más reciente", () => {
+    let state = cartReducer(initialState, {
+      type: "ADD_ITEM",
+      item: item({ unitPrice: 800, listPrice: 1000 }),
+    });
+    state = cartReducer(state, {
+      type: "ADD_ITEM",
+      item: item({ unitPrice: 1000, listPrice: null, quantity: 2 }),
+    });
+    expect(state.items).toEqual([item({ unitPrice: 1000, listPrice: null, quantity: 3 })]);
+  });
+
+  it("SYNC_PRICES reemplaza un precio promocional vencido por el vigente", () => {
+    const state = cartReducer(
+      { items: [item({ unitPrice: 800, listPrice: 1000 })], isHydrated: true },
+      {
+        type: "SYNC_PRICES",
+        updates: [{ productId: "p1", sizeId: null, unitPrice: 1000, listPrice: null }],
+      },
+    );
+    expect(state.items[0]).toMatchObject({ unitPrice: 1000, listPrice: null });
+  });
+
+  it("SYNC_PRICES solo toca la línea con el mismo talle", () => {
+    const state = cartReducer(
+      {
+        items: [
+          item({ sizeId: "s1", unitPrice: 800, listPrice: 1000 }),
+          item({ sizeId: "s2", unitPrice: 800, listPrice: 1000 }),
+        ],
+        isHydrated: true,
+      },
+      {
+        type: "SYNC_PRICES",
+        updates: [{ productId: "p1", sizeId: "s2", unitPrice: 1000, listPrice: null }],
+      },
+    );
+    expect(state.items.map((line) => line.unitPrice)).toEqual([800, 1000]);
+  });
+
+  it("SYNC_PRICES sin cambios devuelve el mismo estado (no dispara revalidaciones)", () => {
+    const before = { items: [item()], isHydrated: true };
+    const after = cartReducer(before, {
+      type: "SYNC_PRICES",
+      updates: [{ productId: "p1", sizeId: null, unitPrice: 1000, listPrice: null }],
+    });
+    expect(after).toBe(before);
   });
 });

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { formatPrice } from "@/lib/utils/formatPrice";
 import { ImagePlaceholder } from "./image-placeholder";
+import { PriceTag } from "./price-tag";
 import type { PublicProductCard } from "@/lib/catalog/products";
 
 export function ProductCard({ product }: { product: PublicProductCard }) {
@@ -23,6 +23,11 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
           ) : (
             <ImagePlaceholder label="Sin imagen" />
           )}
+          {product.compareAtPrice !== null && product.inStock && (
+            <span className="absolute top-2 left-2 rounded-full bg-brand px-2.5 py-1 text-xs font-medium text-brand-foreground">
+              Oferta
+            </span>
+          )}
           {!product.inStock && (
             <span className="absolute top-2 left-2 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-zinc-700">
               Sin stock
@@ -34,9 +39,7 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
           <p className="truncate font-serif text-base text-zinc-900">
             {product.name}
           </p>
-          <p className="font-semibold text-brand">
-            {formatPrice(product.price)}
-          </p>
+          <PriceTag price={product.price} compareAtPrice={product.compareAtPrice} />
           {product.material && (
             <p className="text-sm text-zinc-500">{product.material}</p>
           )}

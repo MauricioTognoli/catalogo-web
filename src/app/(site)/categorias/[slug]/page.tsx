@@ -4,6 +4,7 @@ import { getPublicBusiness } from "@/lib/catalog/business";
 import { getPublicCategory } from "@/lib/catalog/categories";
 import { getPublicProducts } from "@/lib/catalog/products";
 import { ProductGrid } from "@/components/catalog/product-grid";
+import { OfferRefresher } from "@/components/catalog/offer-refresher";
 
 type CategoriaPageProps = {
   params: Promise<{ slug: string }>;
@@ -52,7 +53,10 @@ export default async function CategoriaPage({ params }: CategoriaPageProps) {
           Todavía no hay productos disponibles en esta categoría.
         </p>
       ) : (
-        <ProductGrid products={products} />
+        <>
+          <ProductGrid products={products} />
+          <OfferRefresher endsAt={products.map((product) => product.offerEndsAt)} />
+        </>
       )}
     </div>
   );

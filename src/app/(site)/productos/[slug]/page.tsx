@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPublicBusiness } from "@/lib/catalog/business";
 import { getPublicProduct } from "@/lib/catalog/products";
-import { formatPrice } from "@/lib/utils/formatPrice";
+import { getRequestNow } from "@/lib/offers/request-time";
+import { PriceTag } from "@/components/catalog/price-tag";
+import { OfferCountdown } from "@/components/catalog/offer-clock";
 import { ProductGallery } from "@/components/catalog/product-gallery";
 import { AddToCartForm } from "@/components/cart/add-to-cart-form";
 
@@ -50,9 +52,24 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
       <div className="space-y-4">
         <div>
           <h1 className="font-serif text-3xl text-zinc-900">{product.name}</h1>
-          <p className="mt-1 text-xl font-semibold text-brand">
-            {formatPrice(product.price)}
-          </p>
+          <PriceTag
+            price={product.price}
+            compareAtPrice={product.compareAtPrice}
+            size="lg"
+            className="mt-1"
+          />
+          {product.offerEndsAt && (
+            <div className="mt-3 space-y-2 rounded-lg bg-cream p-3">
+              <p className="text-xs font-medium tracking-wide text-brand uppercase">
+                Oferta: termina en
+              </p>
+              {/* Al llegar a 0 refresca: vuelve el precio normal. */}
+              <OfferCountdown
+                endsAt={product.offerEndsAt}
+                serverNow={getRequestNow()}
+              />
+            </div>
+          )}
           {/* Solo el estado, nunca cantidades. */}
           <p
             className={`mt-2 inline-flex items-center gap-1.5 text-sm font-medium ${

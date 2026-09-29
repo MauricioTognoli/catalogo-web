@@ -25,7 +25,11 @@ export function buildOrderMessage(
       lines.push(`Talle: ${item.sizeLabel}`);
     }
     lines.push(`Cantidad: ${item.quantity}`);
-    lines.push(`Precio: ${formatPrice(item.unitPrice)}`);
+    lines.push(
+      item.listPrice !== null && item.listPrice > item.unitPrice
+        ? `Precio: ${formatPrice(item.unitPrice)} (oferta, antes ${formatPrice(item.listPrice)})`
+        : `Precio: ${formatPrice(item.unitPrice)}`,
+    );
     lines.push(`Total: ${formatPrice(lineTotal)}`);
     lines.push("");
   }

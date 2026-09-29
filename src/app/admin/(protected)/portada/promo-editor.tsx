@@ -64,7 +64,9 @@ export function PromoEditor({
         <div className="grid gap-1">
           <Label htmlFor="promo-enabled">Mostrar banner promocional</Label>
           <p className="text-xs text-muted-foreground">
-            Aparece después de los productos destacados.
+            Aparece después de los productos destacados. Mientras haya una
+            oferta destacada activa (en Ofertas), el banner la muestra a ella
+            con su contador y vuelve a este contenido al terminar.
           </p>
         </div>
         <Switch

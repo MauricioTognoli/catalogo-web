@@ -3,7 +3,7 @@
 import { useEffect, useRef, type MouseEvent } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart/cart-context";
-import { useCartStockCheck } from "@/lib/cart/use-cart-stock-check";
+import { useCartCheck } from "@/lib/cart/use-cart-check";
 import { isBlockingStatus } from "@/lib/stock/availability";
 import { formatPrice } from "@/lib/utils/formatPrice";
 import type { PublicBusiness } from "@/lib/catalog/business";
@@ -22,10 +22,10 @@ export function CartDrawer({
 }: {
   business: Pick<PublicBusiness, "name" | "whatsapp_number">;
 }) {
-  const { isOpen, openCount, closeCart, items, subtotal, removeItem } =
+  const { isOpen, openCount, closeCart, items, subtotal, removeItem, syncPrices } =
     useCart();
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const stockCheck = useCartStockCheck(items, isOpen, openCount);
+  const stockCheck = useCartCheck(items, isOpen, openCount, syncPrices);
 
   const blockedItems = items.filter((item) => {
     const status = stockCheck.statusOf(item);
@@ -38,14 +38,21 @@ export function CartDrawer({
     }
   }
 
-  // Mientras se verifica, o si hay líneas sin stock, no se abre WhatsApp:
-  // así el cliente se entera antes de mandar el pedido. Si la verificación
-  // falla (red), no se bloquea: se avisa que la joyería lo confirma.
+  // Un precio de oferta solo se envía si el servidor lo confirmó vigente.
+  const hasOfferPrices = items.some((item) => item.listPrice !== null);
+  const offerPricesUnconfirmed = stockCheck.failed && hasOfferPrices;
+
+  // Mientras se verifica, si hay líneas sin stock o si no se pudo
+  // confirmar un precio de oferta, no se abre WhatsApp: así el cliente se
+  // entera antes de mandar el pedido. Si la verificación falla (red) y no
+  // hay ofertas, no se bloquea: se avisa que la joyería lo confirma.
   const checkoutDisabledReason = stockCheck.checking
-    ? "Verificando stock..."
+    ? "Verificando stock y precios..."
     : blockedItems.length > 0
       ? "Revisá los productos sin stock"
-      : null;
+      : offerPricesUnconfirmed
+        ? "No pudimos confirmar los precios"
+        : null;
 
   // Sincroniza el estado de React con la API imperativa del <dialog>
   // (showModal/close no tienen equivalente declarativo): esto es
@@ -126,6 +133,18 @@ export function CartDrawer({
             </ul>
 
             <div className="space-y-3 border-t border-zinc-200 px-4 py-4">
+              {stockCheck.priceNotices.length > 0 && (
+                <div
+                  role="status"
+                  className="space-y-1 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
+                >
+                  {stockCheck.priceNotices.map((notice) => (
+                    <p key={notice}>{notice}</p>
+                  ))}
+                  <p className="text-xs">El total ya está actualizado.</p>
+                </div>
+              )}
+
               <div className="flex items-center justify-between font-semibold text-zinc-900">
                 <span>Subtotal</span>
                 <span className="text-brand">{formatPrice(subtotal)}</span>
@@ -151,17 +170,41 @@ export function CartDrawer({
                 </div>
               )}
 
-              {stockCheck.failed && (
-                <p className="text-xs text-zinc-500">
-                  No pudimos verificar el stock en este momento. Te lo
-                  confirmamos al responder tu pedido.
-                </p>
-              )}
+              {stockCheck.failed &&
+                (offerPricesUnconfirmed ? (
+                  <div role="alert" className="space-y-1 text-xs text-red-700">
+                    <p>
+                      No pudimos confirmar que los precios de oferta sigan
+                      vigentes.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={stockCheck.retry}
+                      className="font-medium underline underline-offset-2"
+                    >
+                      Reintentar
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-zinc-500">
+                    No pudimos verificar el stock en este momento. Te lo
+                    confirmamos al responder tu pedido.
+                  </p>
+                ))}
 
               <WhatsAppCheckoutButton
                 businessName={business.name}
                 whatsappNumber={business.whatsapp_number}
                 disabledReason={checkoutDisabledReason}
+                onBeforeOpen={() => {
+                  // Si venció una oferta y el timer todavía no disparó
+                  // (pestaña en segundo plano), se revalida antes de enviar.
+                  if (stockCheck.isPriceStale()) {
+                    stockCheck.retry();
+                    return false;
+                  }
+                  return true;
+                }}
               />
 
               <p className="text-center text-xs text-zinc-500">

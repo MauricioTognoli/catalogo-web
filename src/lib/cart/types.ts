@@ -6,7 +6,10 @@ export type CartItem = {
   productSlug: string;
   productName: string;
   productImageUrl: string | null;
+  /** Precio unitario vigente (el promocional si hay oferta). */
   unitPrice: number;
+  /** Precio normal, solo si unitPrice es de una oferta. */
+  listPrice: number | null;
   quantity: number;
   sizeId: string | null;
   sizeLabel: string | null;

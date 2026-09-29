@@ -21,6 +21,10 @@ import {
 } from "@/components/catalog/collection-blocks";
 import { PromoBanner } from "@/components/catalog/promo-banner";
 import { ImageGallery } from "@/components/catalog/image-gallery";
+import { OfferBanner } from "@/components/catalog/offer-banner";
+import { OfferRefresher } from "@/components/catalog/offer-refresher";
+import { getFeaturedOffer } from "@/lib/offers/queries";
+import { getRequestNow } from "@/lib/offers/request-time";
 
 const NEW_ARRIVALS_LIMIT = 8;
 const TOP_PRODUCTS_PER_CATEGORY = 8;
@@ -47,10 +51,11 @@ export default async function HomePage() {
     return null;
   }
 
-  const [categories, products, { config }] = await Promise.all([
+  const [categories, products, { config }, featuredOffer] = await Promise.all([
     getPublicCategories(business.id),
     getPublicProducts(business.id),
     getPublicStorefront(business.id),
+    getFeaturedOffer(business.id),
   ]);
 
   // Un fetch por categoría (mismo getPublicProducts que ya usa la página
@@ -146,7 +151,11 @@ export default async function HomePage() {
         </section>
       )}
 
-      {promoHiddenReason(config.promo) === null && (
+      {/* La oferta destacada vigente reemplaza al banner de la Portada;
+          al vencer vuelve el contenido publicado, sin volver a publicar. */}
+      {featuredOffer ? (
+        <OfferBanner offer={featuredOffer} serverNow={getRequestNow()} />
+      ) : promoHiddenReason(config.promo) === null && (
         <PromoBanner
           imageUrl={storefrontImageUrl(config.promo.imagePath)}
           eyebrow={config.promo.eyebrow}
@@ -155,6 +164,13 @@ export default async function HomePage() {
           cta={resolveCta(config.promo.cta, links)}
         />
       )}
+
+      <OfferRefresher
+        endsAt={[
+          featuredOffer?.endsAt ?? null,
+          ...products.map((product) => product.offerEndsAt),
+        ]}
+      />
 
       {galleryHiddenReason(config.gallery) === null && (
         <ImageGallery

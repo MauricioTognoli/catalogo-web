@@ -16,11 +16,14 @@ export function WhatsAppCheckoutButton({
   businessName,
   whatsappNumber,
   disabledReason,
+  onBeforeOpen,
 }: {
   businessName: string;
   whatsappNumber: string;
   /** Si viene, el botón queda deshabilitado mostrando este texto. */
   disabledReason?: string | null;
+  /** Última verificación al hacer clic; false cancela la apertura. */
+  onBeforeOpen?: () => boolean;
 }) {
   const { items } = useCart();
 
@@ -55,6 +58,9 @@ export function WhatsAppCheckoutButton({
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={(event) => {
+        if (onBeforeOpen && !onBeforeOpen()) event.preventDefault();
+      }}
       className="flex min-h-11 items-center justify-center rounded-full bg-green-600 px-4 text-center text-sm font-medium text-white hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
     >
       Finalizar por WhatsApp

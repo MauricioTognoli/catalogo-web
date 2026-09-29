@@ -1,12 +1,47 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { isPublicProductPurchasable } from "@/lib/stock/availability";
+import { effectivePrice, type OfferLike } from "@/lib/offers/pricing";
+import { getRequestNow } from "@/lib/offers/request-time";
+
+/**
+ * Ofertas embebidas. Para visitantes la RLS ya devuelve solo las vigentes;
+ * si mira el dueño con sesión llegan todas, y effectivePrice filtra por
+ * habilitada y período igual.
+ */
+type OfferRow = {
+  offer_price: number;
+  starts_at: string;
+  ends_at: string;
+  enabled: boolean;
+};
+
+const OFFER_COLUMNS = "product_offer(offer_price, starts_at, ends_at, enabled)";
+
+function toOffers(rows: OfferRow[] | null | undefined): OfferLike[] {
+  return (rows ?? []).map((row) => ({
+    offerPrice: Number(row.offer_price),
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
+    enabled: row.enabled,
+  }));
+}
+
+/** Precio de un producto en este request (el "ahora" es el del servidor). */
+function priceNow(regularPrice: number, offers: OfferRow[] | null | undefined) {
+  return effectivePrice(Number(regularPrice), toOffers(offers), getRequestNow());
+}
 
 export type PublicProductCard = {
   id: string;
   name: string;
   slug: string;
+  /** Precio vigente: el promocional si hay oferta activa. */
   price: number;
+  /** Precio normal (tachado) mientras dura una oferta. */
+  compareAtPrice: number | null;
+  /** Fin real de la oferta vigente (ISO). */
+  offerEndsAt: string | null;
   material: string | null;
   mainImageUrl: string | null;
   hasAvailableSizes: boolean;
@@ -32,7 +67,10 @@ export type PublicProductDetail = {
   name: string;
   slug: string;
   description: string | null;
+  /** Precio vigente: el promocional si hay oferta activa. */
   price: number;
+  compareAtPrice: number | null;
+  offerEndsAt: string | null;
   material: string | null;
   images: PublicProductImage[];
   /** Solo talles activos, en orden. Los sin stock se muestran deshabilitados. */
@@ -47,6 +85,7 @@ type ProductListRow = {
   price: number;
   material: string | null;
   in_stock: boolean;
+  product_offer: OfferRow[];
   product_image: { url: string; position: number }[];
   // Todos los talles del producto (la RLS pública ya no oculta los
   // desactivados), para saber si el stock se gestiona por talle.
@@ -58,11 +97,15 @@ function toProductCard(row: ProductListRow): PublicProductCard {
     (a, b) => a.position - b.position,
   )[0];
 
+  const pricing = priceNow(row.price, row.product_offer);
+
   return {
     id: row.id,
     name: row.name,
     slug: row.slug,
-    price: row.price,
+    price: pricing.price,
+    compareAtPrice: pricing.compareAtPrice,
+    offerEndsAt: pricing.offerEndsAt,
     material: row.material,
     mainImageUrl: mainImage?.url ?? null,
     hasAvailableSizes: row.product_size.some(
@@ -93,7 +136,7 @@ export const getPublicProducts = cache(
     let query = supabase
       .from("product")
       .select(
-        "id, name, slug, price, material, in_stock, product_image(url, position), product_size(available, in_stock)",
+        `id, name, slug, price, material, in_stock, product_image(url, position), product_size(available, in_stock), ${OFFER_COLUMNS}`,
       )
       .eq("business_id", businessId)
       .eq("available", true)
@@ -135,7 +178,7 @@ export const searchPublicProducts = cache(
     const { data, error } = await supabase
       .from("product")
       .select(
-        "id, name, slug, price, material, in_stock, product_image(url, position), product_size(available, in_stock)",
+        `id, name, slug, price, material, in_stock, product_image(url, position), product_size(available, in_stock), ${OFFER_COLUMNS}`,
       )
       .eq("business_id", businessId)
       .eq("available", true)
@@ -161,7 +204,9 @@ export const getPublicProduct = cache(
 
     const { data: product, error: productError } = await supabase
       .from("product")
-      .select("id, name, slug, description, price, material, in_stock")
+      .select(
+        `id, name, slug, description, price, material, in_stock, ${OFFER_COLUMNS}`,
+      )
       .eq("business_id", businessId)
       .eq("slug", slug)
       .eq("available", true)
@@ -198,10 +243,15 @@ export const getPublicProduct = cache(
     }
 
     const allSizes = sizes ?? [];
-    const { in_stock: productInStock, ...productFields } = product;
+    const {
+      in_stock: productInStock,
+      product_offer: offers,
+      ...productFields
+    } = product;
 
     return {
       ...productFields,
+      ...priceNow(product.price, offers as OfferRow[]),
       images: images ?? [],
       sizes: allSizes
         .filter((size) => size.available)

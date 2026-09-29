@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getPublicBusiness } from "@/lib/catalog/business";
 import { searchPublicProducts } from "@/lib/catalog/products";
 import { ProductGrid } from "@/components/catalog/product-grid";
+import { OfferRefresher } from "@/components/catalog/offer-refresher";
 
 type BuscarPageProps = {
   searchParams: Promise<{ q?: string }>;
@@ -43,7 +44,10 @@ export default async function BuscarPage({ searchParams }: BuscarPageProps) {
           No encontramos productos que coincidan con &quot;{query}&quot;.
         </p>
       ) : (
-        <ProductGrid products={products} />
+        <>
+          <ProductGrid products={products} />
+          <OfferRefresher endsAt={products.map((product) => product.offerEndsAt)} />
+        </>
       )}
     </div>
   );

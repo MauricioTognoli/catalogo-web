@@ -33,6 +33,7 @@ function validItem(overrides: Partial<CartItem> = {}): CartItem {
     productName: "Producto",
     productImageUrl: null,
     unitPrice: 1000,
+    listPrice: null,
     quantity: 1,
     sizeId: null,
     sizeLabel: null,
@@ -185,5 +186,28 @@ describe("writeCartToStorage", () => {
       throw new Error("QuotaExceededError");
     };
     expect(() => writeCartToStorage([validItem()])).not.toThrow();
+  });
+});
+
+describe("readCartFromStorage: listPrice", () => {
+  it("un carrito guardado antes de las ofertas se lee con listPrice null", () => {
+    const legacy = { ...validItem() } as Record<string, unknown>;
+    delete legacy.listPrice;
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify([legacy]));
+    expect(readCartFromStorage()).toEqual([validItem({ listPrice: null })]);
+  });
+
+  it("descarta un listPrice que no es mayor al precio (no hay oferta real)", () => {
+    window.localStorage.setItem(
+      CART_STORAGE_KEY,
+      JSON.stringify([validItem({ unitPrice: 1000, listPrice: 900 })]),
+    );
+    expect(readCartFromStorage()[0].listPrice).toBeNull();
+  });
+
+  it("conserva el precio normal de una línea en oferta", () => {
+    const items = [validItem({ unitPrice: 800, listPrice: 1000 })];
+    writeCartToStorage(items);
+    expect(readCartFromStorage()).toEqual(items);
   });
 });

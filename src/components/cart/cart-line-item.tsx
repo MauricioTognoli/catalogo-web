@@ -67,7 +67,15 @@ export function CartLineItem({
         {item.sizeLabel && (
           <p className="text-xs text-zinc-500">Talle: {item.sizeLabel}</p>
         )}
-        <p className="text-sm text-zinc-600">{formatPrice(item.unitPrice)}</p>
+        <p className="flex items-baseline gap-2 text-sm text-zinc-600">
+          {formatPrice(item.unitPrice)}
+          {item.listPrice !== null && item.listPrice > item.unitPrice && (
+            <>
+              <span className="sr-only">, precio de oferta, antes</span>
+              <s className="text-xs text-zinc-400">{formatPrice(item.listPrice)}</s>
+            </>
+          )}
+        </p>
 
         {status && status !== "ok" && (
           <p

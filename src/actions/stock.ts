@@ -9,6 +9,7 @@ import {
   type CartLineFacts,
   type CartLineStatus,
 } from "@/lib/stock/availability";
+import { earliestEnd, effectivePrice } from "@/lib/offers/pricing";
 
 export type StockActionState = {
   error: string | null;
@@ -123,12 +124,38 @@ export type CartStockLine = {
   quantity: number;
 };
 
+export type CartLineCheck = {
+  productId: string;
+  sizeId: string | null;
+  status: CartLineStatus;
+  /** Precio vigente ahora (null si el producto ya no está disponible). */
+  unitPrice: number | null;
+  /** Precio normal si unitPrice es de una oferta vigente. */
+  listPrice: number | null;
+};
+
 export type CartStockResult =
   | {
       ok: true;
-      statuses: { productId: string; sizeId: string | null; status: CartLineStatus }[];
+      statuses: CartLineCheck[];
+      /**
+       * Vencimiento más próximo entre las ofertas del carrito: a partir de
+       * ese instante estos precios dejan de valer y hay que revalidar.
+       */
+      validUntil: string | null;
     }
   | { ok: false };
+
+type PriceRow = {
+  id: string;
+  price: number;
+  product_offer: {
+    offer_price: number;
+    starts_at: string;
+    ends_at: string;
+    enabled: boolean;
+  }[];
+};
 
 type CartStockRow = {
   product_id: string;
@@ -145,9 +172,11 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * Revalida el carrito guardado contra el stock actual. Pública (la usan
- * visitantes sin sesión): la función SQL solo devuelve booleanos, así que
- * nunca expone cantidades. No reserva unidades.
+ * Revalida el carrito guardado contra el stock y el PRECIO actuales.
+ * Pública (la usan visitantes sin sesión): la función SQL de stock solo
+ * devuelve booleanos, así que nunca expone cantidades. No reserva
+ * unidades. El precio se calcula acá, en el servidor: una oferta vencida
+ * nunca vuelve como precio vigente aunque el carrito la tenga guardada.
  */
 export async function checkCartStock(
   lines: CartStockLine[],
@@ -169,17 +198,42 @@ export async function checkCartStock(
     }));
 
   if (cleanLines.length === 0) {
-    return { ok: true, statuses: [] };
+    return { ok: true, statuses: [], validUntil: null };
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("cart_stock_status", {
-    lines: cleanLines,
-  });
+  const productIds = [...new Set(cleanLines.map((line) => line.product_id))];
+  const [{ data, error }, { data: priceRows, error: priceError }] = await Promise.all([
+    supabase.rpc("cart_stock_status", { lines: cleanLines }),
+    // Precios públicos: solo productos visibles y ofertas vigentes (RLS).
+    supabase
+      .from("product")
+      .select("id, price, product_offer(offer_price, starts_at, ends_at, enabled)")
+      .in("id", productIds)
+      .eq("available", true)
+      .returns<PriceRow[]>(),
+  ]);
 
-  if (error || !Array.isArray(data)) {
+  if (error || !Array.isArray(data) || priceError) {
     return { ok: false };
   }
+
+  const now = Date.now();
+  const priceById = new Map(
+    (priceRows ?? []).map((row) => [
+      row.id,
+      effectivePrice(
+        Number(row.price),
+        row.product_offer.map((offer) => ({
+          offerPrice: Number(offer.offer_price),
+          startsAt: offer.starts_at,
+          endsAt: offer.ends_at,
+          enabled: offer.enabled,
+        })),
+        now,
+      ),
+    ]),
+  );
 
   // Sin tipos generados de Supabase, rpc() devuelve any.
   const rows = data as CartStockRow[];
@@ -198,13 +252,19 @@ export async function checkCartStock(
 
   return {
     ok: true,
-    statuses: cleanLines.map((line) => ({
-      productId: line.product_id,
-      sizeId: line.size_id,
-      status: resolveCartLineStatus(
-        line.size_id,
-        factsByLine.get(`${line.product_id}:${line.size_id ?? ""}`),
-      ),
-    })),
+    statuses: cleanLines.map((line) => {
+      const price = priceById.get(line.product_id);
+      return {
+        productId: line.product_id,
+        sizeId: line.size_id,
+        status: resolveCartLineStatus(
+          line.size_id,
+          factsByLine.get(`${line.product_id}:${line.size_id ?? ""}`),
+        ),
+        unitPrice: price?.price ?? null,
+        listPrice: price?.compareAtPrice ?? null,
+      };
+    }),
+    validUntil: earliestEnd([...priceById.values()].map((price) => price.offerEndsAt)),
   };
 }

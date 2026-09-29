@@ -10,6 +10,7 @@ function item(overrides: Partial<CartItem> = {}): CartItem {
     productName: "Producto",
     productImageUrl: null,
     unitPrice: 1000,
+    listPrice: null,
     quantity: 1,
     sizeId: null,
     sizeLabel: null,
@@ -98,5 +99,23 @@ describe("buildOrderMessage", () => {
     );
     expect(collarBlock).not.toContain("Talle:");
     expect(message).toContain("Talle: 18");
+  });
+});
+
+describe("buildOrderMessage: ofertas", () => {
+  it("indica el precio de oferta y el precio anterior", () => {
+    const message = buildOrderMessage("Mi Negocio", [
+      item({ unitPrice: 800, listPrice: 1000, quantity: 2 }),
+    ]);
+    expect(message).toContain(
+      `Precio: ${formatPrice(800)} (oferta, antes ${formatPrice(1000)})`,
+    );
+    expect(message).toContain(`Total: ${formatPrice(1600)}`);
+  });
+
+  it("sin oferta, la línea de precio no cambia", () => {
+    const message = buildOrderMessage("Mi Negocio", [item({ unitPrice: 1000 })]);
+    expect(message).toContain(`Precio: ${formatPrice(1000)}\n`);
+    expect(message).not.toContain("oferta");
   });
 });

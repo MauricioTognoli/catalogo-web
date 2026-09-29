@@ -47,6 +47,13 @@ function parseCartItem(value: unknown): CartItem | null {
     typeof item.productImageUrl === "string" ? item.productImageUrl : null;
   const sizeId = typeof item.sizeId === "string" ? item.sizeId : null;
   const sizeLabel = typeof item.sizeLabel === "string" ? item.sizeLabel : null;
+  // Carritos guardados antes de las ofertas no tienen listPrice.
+  const listPrice =
+    typeof item.listPrice === "number" &&
+    Number.isFinite(item.listPrice) &&
+    item.listPrice > unitPrice
+      ? item.listPrice
+      : null;
 
   return {
     productId,
@@ -54,6 +61,7 @@ function parseCartItem(value: unknown): CartItem | null {
     productName,
     productImageUrl,
     unitPrice,
+    listPrice,
     quantity,
     sizeId,
     sizeLabel,

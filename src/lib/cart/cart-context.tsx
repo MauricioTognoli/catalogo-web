@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -23,9 +24,17 @@ type AddItemInput = {
   productName: string;
   productImageUrl: string | null;
   unitPrice: number;
+  listPrice: number | null;
   quantity: number;
   sizeId: string | null;
   sizeLabel: string | null;
+};
+
+export type PriceUpdate = {
+  productId: string;
+  sizeId: string | null;
+  unitPrice: number;
+  listPrice: number | null;
 };
 
 type CartState = {
@@ -46,6 +55,7 @@ type CartAction =
       quantity: number;
     }
   | { type: "REMOVE_ITEM"; productId: string; sizeId: string | null }
+  | { type: "SYNC_PRICES"; updates: PriceUpdate[] }
   | { type: "CLEAR_CART" };
 
 // Exportados únicamente para poder testear el reducer de forma directa y
@@ -74,7 +84,14 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
           ? [...state.items, { ...action.item, quantity }]
           : state.items.map((line, index) =>
               index === existingIndex
-                ? { ...line, quantity: clampQuantity(line.quantity + quantity) }
+                ? {
+                    ...line,
+                    // El precio más reciente gana (pudo empezar o terminar
+                    // una oferta desde que se agregó la primera vez).
+                    unitPrice: action.item.unitPrice,
+                    listPrice: action.item.listPrice,
+                    quantity: clampQuantity(line.quantity + quantity),
+                  }
                 : line,
             );
 
@@ -108,6 +125,23 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
         items: state.items.filter((line) => !isSameCartLine(line, action)),
       };
 
+    case "SYNC_PRICES": {
+      let changed = false;
+      const items = state.items.map((line) => {
+        const update = action.updates.find((candidate) => isSameCartLine(candidate, line));
+        if (
+          !update ||
+          (update.unitPrice === line.unitPrice && update.listPrice === line.listPrice)
+        ) {
+          return line;
+        }
+        changed = true;
+        return { ...line, unitPrice: update.unitPrice, listPrice: update.listPrice };
+      });
+      // Misma referencia si nada cambió: evita renders y revalidaciones.
+      return changed ? { ...state, items } : state;
+    }
+
     case "CLEAR_CART":
       return { ...state, items: [] };
 
@@ -127,6 +161,8 @@ type CartContextValue = {
     quantity: number,
   ) => void;
   removeItem: (productId: string, sizeId: string | null) => void;
+  /** Aplica los precios vigentes que devolvió la revalidación. */
+  syncPrices: (updates: PriceUpdate[]) => void;
   clearCart: () => void;
   isOpen: boolean;
   /** Cambia en cada apertura: dispara una revalidación de stock nueva. */
@@ -142,6 +178,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const { items, isHydrated } = state;
   const [isOpen, setIsOpen] = useState(false);
   const [openCount, setOpenCount] = useState(0);
+
+  // Estable (dispatch no cambia): la usan efectos de revalidación como
+  // dependencia sin reiniciarse en cada render.
+  const syncPrices = useCallback(
+    (updates: PriceUpdate[]) => dispatch({ type: "SYNC_PRICES", updates }),
+    [],
+  );
 
   // El estado inicial es { items: [], isHydrated: false } tanto en
   // servidor como en el primer render de cliente (mismo HTML, sin
@@ -180,6 +223,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "UPDATE_QUANTITY", productId, sizeId, quantity }),
       removeItem: (productId, sizeId) =>
         dispatch({ type: "REMOVE_ITEM", productId, sizeId }),
+      syncPrices,
       clearCart: () => dispatch({ type: "CLEAR_CART" }),
       isOpen,
       openCount,
@@ -189,7 +233,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       },
       closeCart: () => setIsOpen(false),
     }),
-    [items, itemCount, subtotal, isOpen, openCount],
+    [items, itemCount, subtotal, isOpen, openCount, syncPrices],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

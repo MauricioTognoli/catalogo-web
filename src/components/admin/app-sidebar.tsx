@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   PanelsTopLeft,
   Settings,
+  TicketPercent,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -52,6 +53,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "Tienda",
     items: [
       { href: "/admin/portada", label: "Portada", icon: PanelsTopLeft },
+      { href: "/admin/ofertas", label: "Ofertas", icon: TicketPercent },
     ],
   },
   {
