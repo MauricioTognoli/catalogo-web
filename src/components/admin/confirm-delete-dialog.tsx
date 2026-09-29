@@ -30,6 +30,8 @@ export function ConfirmDeleteDialog<S extends ActionState>({
   fields,
   successMessage,
   onDeleted,
+  pendingLabel = "Eliminando...",
+  destructive = true,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -40,6 +42,9 @@ export function ConfirmDeleteDialog<S extends ActionState>({
   fields: Record<string, string>;
   successMessage: string;
   onDeleted?: () => void;
+  /** Para confirmar acciones que no borran (ej: publicar). */
+  pendingLabel?: string;
+  destructive?: boolean;
 }) {
   const { handleSubmit, pending } = useFormAction(action, {
     successMessage,
@@ -67,9 +72,13 @@ export function ConfirmDeleteDialog<S extends ActionState>({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={pending}>Cancelar</AlertDialogCancel>
-            <Button type="submit" variant="destructive" disabled={pending}>
+            <Button
+              type="submit"
+              variant={destructive ? "destructive" : "default"}
+              disabled={pending}
+            >
               {pending && <Loader2 className="animate-spin" aria-hidden="true" />}
-              {pending ? "Eliminando..." : confirmLabel}
+              {pending ? pendingLabel : confirmLabel}
             </Button>
           </AlertDialogFooter>
         </form>

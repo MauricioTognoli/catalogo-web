@@ -9,6 +9,8 @@ import { CartButton } from "@/components/cart/cart-button";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { SearchForm } from "@/components/catalog/search-form";
 import { SiteFooter } from "@/components/catalog/site-footer";
+import { PreviewBar } from "@/components/catalog/preview-bar";
+import { getPublicStorefront } from "@/lib/storefront/queries";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -28,16 +30,23 @@ export default async function SiteLayout({
     notFound();
   }
 
-  const categories = await getPublicCategories(business.id);
+  const [categories, { config: storefront, isPreview }] = await Promise.all([
+    getPublicCategories(business.id),
+    getPublicStorefront(business.id),
+  ]);
 
   return (
     <CartProvider>
       <div
         className={`${playfair.variable} flex min-h-screen flex-col bg-white text-zinc-900`}
       >
-        <div className="bg-brand px-4 py-2 text-center text-xs font-medium tracking-wide text-brand-foreground">
-          Envíos a todo el país · Coordinamos por WhatsApp
-        </div>
+        {isPreview && <PreviewBar />}
+
+        {storefront.announcement && (
+          <div className="bg-brand px-4 py-2 text-center text-xs font-medium tracking-wide text-brand-foreground">
+            {storefront.announcement}
+          </div>
+        )}
 
         <header className="border-b border-zinc-200">
           <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-4">

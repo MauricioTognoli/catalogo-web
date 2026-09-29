@@ -3,10 +3,17 @@ import Link from "next/link";
 import { Button } from "@/components/catalog/ui/button";
 
 export function HeroBanner({
-  businessName,
+  eyebrow,
+  title,
+  description,
+  cta,
   imageUrl,
 }: {
-  businessName: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  /** null: sin destino válido, no se dibuja el botón. */
+  cta: { label: string; href: string } | null;
   imageUrl: string | null;
 }) {
   return (
@@ -30,18 +37,20 @@ export function HeroBanner({
         }
       />
       <div className="relative z-10 max-w-lg px-6 py-16 text-white sm:px-12">
-        <p className="text-sm tracking-[0.2em] text-white/80 uppercase">
-          Nueva colección
-        </p>
+        {eyebrow && (
+          <p className="text-sm tracking-[0.2em] text-white/80 uppercase">
+            {eyebrow}
+          </p>
+        )}
         <h1 className="mt-3 font-serif text-4xl leading-tight sm:text-5xl">
-          {businessName}
+          {title}
         </h1>
-        <p className="mt-4 text-white/85">
-          Piezas pensadas para acompañar cada momento.
-        </p>
-        <Button asChild className="mt-6 bg-white text-brand hover:bg-white/90">
-          <Link href="#productos">Ver productos</Link>
-        </Button>
+        {description && <p className="mt-4 text-white/85">{description}</p>}
+        {cta && (
+          <Button asChild className="mt-6 bg-white text-brand hover:bg-white/90">
+            <Link href={cta.href}>{cta.label}</Link>
+          </Button>
+        )}
       </div>
     </section>
   );

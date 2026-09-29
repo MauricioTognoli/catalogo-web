@@ -8,6 +8,7 @@ import {
   FolderTree,
   Gem,
   LayoutDashboard,
+  PanelsTopLeft,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -45,6 +46,12 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { href: "/admin/dashboard", label: "Inicio", icon: LayoutDashboard },
       { href: "/admin/productos", label: "Productos", icon: Gem },
       { href: "/admin/categorias", label: "Categorías", icon: FolderTree },
+    ],
+  },
+  {
+    label: "Tienda",
+    items: [
+      { href: "/admin/portada", label: "Portada", icon: PanelsTopLeft },
     ],
   },
   {
