@@ -138,10 +138,6 @@ export default async function ProductosPage({
       />
 
       <ProductsTable
-        // Remonta los filtros cuando se llega con otros parámetros (links
-        // del dashboard o del sidebar); los cambios hechos acá solo
-        // reescriben la URL y no disparan esta key.
-        key={`${query}|${categoryId}|${status}`}
         products={rows}
         categories={categories}
         initialQuery={query}

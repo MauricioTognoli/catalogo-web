@@ -5,7 +5,13 @@ import { redirect } from "next/navigation";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils/slugify";
-import { getStoragePathFromPublicUrl } from "@/lib/storage/getStoragePathFromPublicUrl";
+import {
+  PRODUCT_IMAGES_BUCKET,
+  parseProductIds,
+  productImagePaths,
+  runBulkDelete,
+  type BulkDeleteResult,
+} from "@/lib/admin/bulk-delete";
 import { parseStockInput } from "@/lib/stock/availability";
 
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -318,7 +324,71 @@ export async function toggleProductAvailability(
   return { error: null };
 }
 
-const PRODUCT_IMAGES_BUCKET = "product-images";
+export type DeleteProductsState = {
+  error: string | null;
+  deletedIds: string[];
+  failed: BulkDeleteResult["failed"];
+};
+
+export async function deleteProducts(
+  productIds: unknown,
+): Promise<DeleteProductsState> {
+  const business = await getCurrentBusiness();
+
+  if (!business) {
+    return {
+      error: "Necesitás configurar tu negocio antes de eliminar productos.",
+      deletedIds: [],
+      failed: [],
+    };
+  }
+
+  const parsed = parseProductIds(productIds);
+  if (!parsed.ok) {
+    return { error: parsed.error, deletedIds: [], failed: [] };
+  }
+
+  const supabase = await createClient();
+
+  const outcome = await runBulkDelete(parsed.value, {
+    loadOwned: async (ids) => {
+      const { data, error } = await supabase
+        .from("product")
+        .select("id, product_image(url)")
+        .eq("business_id", business.id)
+        .in("id", ids)
+        .returns<{ id: string; product_image: { url: string }[] }[]>();
+      if (error) return null;
+      return data.map((product) => ({
+        id: product.id,
+        imageUrls: product.product_image.map((image) => image.url),
+      }));
+    },
+    deleteOne: async (id) => {
+      const { data, error } = await supabase
+        .from("product")
+        .delete()
+        .eq("id", id)
+        .eq("business_id", business.id)
+        .select("id");
+      return !error && data.length === 1;
+    },
+    removeImages: async (paths) => {
+      await supabase.storage.from(PRODUCT_IMAGES_BUCKET).remove(paths);
+    },
+  });
+
+  if (!outcome.ok) {
+    return { error: outcome.error, deletedIds: [], failed: [] };
+  }
+
+  if (outcome.value.deletedIds.length > 0) {
+    revalidatePath("/admin/productos");
+    revalidatePath("/admin/dashboard");
+  }
+
+  return { error: null, ...outcome.value };
+}
 
 export async function deleteProduct(
   _prevState: ProductActionState,
@@ -358,11 +428,9 @@ export async function deleteProduct(
   // product_image y product_size tienen ON DELETE CASCADE: al borrar el
   // producto se borran sus filas. Los archivos de Storage no, por eso se
   // resuelven sus paths antes del delete.
-  const imagePaths = (existingProduct.product_image as { url: string }[])
-    .map((image) =>
-      getStoragePathFromPublicUrl(image.url, PRODUCT_IMAGES_BUCKET),
-    )
-    .filter((path): path is string => path !== null);
+  const imagePaths = productImagePaths(
+    (existingProduct.product_image as { url: string }[]).map((image) => image.url),
+  );
 
   const { error: deleteError } = await supabase
     .from("product")
