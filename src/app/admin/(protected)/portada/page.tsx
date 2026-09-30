@@ -11,11 +11,8 @@ import { CollectionEditor } from "./collection-editor";
 import { PromoEditor } from "./promo-editor";
 import { GalleryEditor } from "./gallery-editor";
 import { PublishActions } from "./publish-actions";
-import {
-  STOREFRONT_SECTIONS,
-  StorefrontTabs,
-  type StorefrontSectionKey,
-} from "./storefront-tabs";
+import { StorefrontTabs } from "./storefront-tabs";
+import { STOREFRONT_SECTIONS, type StorefrontSectionKey } from "./storefront-sections";
 
 export const metadata: Metadata = {
   title: "Portada",

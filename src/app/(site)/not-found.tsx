@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function SiteNotFound() {
   return (
-    <div className="flex flex-col items-center gap-4 py-16 text-center">
+    <div className="mx-auto w-full max-w-6xl px-4 flex flex-col items-center gap-4 py-16 text-center">
       <h1 className="font-serif text-3xl text-zinc-900">No encontrado</h1>
       <p className="text-zinc-600">No pudimos encontrar lo que buscabas.</p>
       <Link
