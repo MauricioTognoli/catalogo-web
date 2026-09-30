@@ -28,13 +28,13 @@ export function SearchForm({
           id={inputId}
           name="q"
           type="search"
-          placeholder="¿Qué estás buscando? ej: anillo"
-          className="pr-11"
+          placeholder="¿Qué estás buscando hoy? ej: anillo"
+          className="rounded-md border-transparent bg-cream pr-11"
         />
         <button
           type="submit"
           aria-label="Buscar"
-          className="absolute top-1/2 right-1 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-zinc-500 hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="absolute top-1/2 right-1 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-zinc-600 hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           <Search className="h-4 w-4" aria-hidden="true" />
         </button>

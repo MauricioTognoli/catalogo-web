@@ -20,6 +20,7 @@ import { ProductGrid } from "@/components/catalog/product-grid";
 import { HeroBanner } from "@/components/catalog/hero-banner";
 import { CategoryTabs } from "@/components/catalog/category-tabs";
 import { SectionHeading } from "@/components/catalog/section-heading";
+import { StoreSection } from "@/components/catalog/store-section";
 import {
   CollectionBlocks,
   type CollectionBlockView,
@@ -32,7 +33,7 @@ import { getFeaturedOffer } from "@/lib/offers/queries";
 import { getRequestNow } from "@/lib/offers/request-time";
 
 const NEW_ARRIVALS_LIMIT = 8;
-const TOP_PRODUCTS_PER_CATEGORY = 8;
+const TOP_PRODUCTS_PER_CATEGORY = 4;
 
 export async function generateMetadata(): Promise<Metadata> {
   const business = await getPublicBusiness();
@@ -118,7 +119,7 @@ export default async function HomePage() {
     }));
 
   return (
-    <div className="space-y-16">
+    <>
       <HeroBanner
         eyebrow={config.hero.eyebrow}
         title={config.hero.title || business.name}
@@ -134,21 +135,30 @@ export default async function HomePage() {
       />
 
       {categoryGroups.some((group) => group.products.length > 0) && (
-        <section aria-labelledby="top-product-heading" className="space-y-6">
-          <SectionHeading
-            id="top-product-heading"
-            eyebrow="Explorá"
-            title="Por categoría"
+        <StoreSection aria-labelledby="top-product-heading">
+          <CategoryTabs
+            groups={categoryGroups}
+            heading={
+              <SectionHeading
+                id="top-product-heading"
+                title="Por categoría"
+                align="start"
+              />
+            }
           />
-          <CategoryTabs groups={categoryGroups} />
-        </section>
+        </StoreSection>
       )}
 
-      <section id="productos" aria-labelledby="new-arrivals-heading" className="space-y-6">
+      <StoreSection
+        id="productos"
+        tone="cream"
+        aria-labelledby="new-arrivals-heading"
+        className="scroll-mt-6"
+      >
         <SectionHeading
           id="new-arrivals-heading"
-          eyebrow="Recién llegados"
           title="Novedades"
+          className="mb-8"
         />
 
         {newArrivals.length === 0 ? (
@@ -158,23 +168,24 @@ export default async function HomePage() {
         ) : (
           <ProductGrid products={newArrivals} />
         )}
-      </section>
+      </StoreSection>
 
       <CollectionBlocks blocks={collections} />
 
       {featured.length > 0 && (
-        <section
+        <StoreSection
           id="destacados"
+          tone="cream"
           aria-labelledby="featured-heading"
-          className="scroll-mt-6 space-y-6"
+          className="scroll-mt-6"
         >
           <SectionHeading
             id="featured-heading"
-            eyebrow="Nuestra selección"
             title="Destacados"
+            className="mb-8"
           />
-          <ProductGrid products={featured} />
-        </section>
+          <ProductGrid products={featured} layout="carousel" />
+        </StoreSection>
       )}
 
       {/* La oferta destacada vigente reemplaza al banner de la Portada;
@@ -209,6 +220,6 @@ export default async function HomePage() {
           }))}
         />
       )}
-    </div>
+    </>
   );
 }

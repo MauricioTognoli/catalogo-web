@@ -12,6 +12,7 @@ import { CartDrawer } from "@/components/cart/cart-drawer";
 import { SearchForm } from "@/components/catalog/search-form";
 import { SiteFooter } from "@/components/catalog/site-footer";
 import { PreviewBar } from "@/components/catalog/preview-bar";
+import { STORE_CONTAINER } from "@/components/catalog/store-section";
 import { getPublicStorefront } from "@/lib/storefront/queries";
 
 const playfair = Playfair_Display({
@@ -60,76 +61,76 @@ export default async function SiteLayout({
         {isPreview && <PreviewBar />}
 
         {storefront.announcement && (
-          <div className="bg-brand px-4 py-2 text-center text-xs font-medium tracking-wide text-brand-foreground">
+          <div className="bg-brand px-4 py-2 text-center text-xs font-medium tracking-[0.15em] text-brand-foreground uppercase">
             {storefront.announcement}
           </div>
         )}
 
-        <header className="border-b border-zinc-200">
-          <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-4">
-            <div className="flex items-center justify-between gap-4">
-              <Link
-                href="/"
-                className="flex min-w-0 items-center gap-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-              >
-                {business.logo_url ? (
-                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-zinc-100">
-                    <Image
-                      src={business.logo_url}
-                      alt={`Logo de ${business.name}`}
-                      fill
-                      sizes="40px"
-                      className="object-cover"
-                    />
-                  </div>
-                ) : (
-                  <span
-                    aria-hidden="true"
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-brand-foreground"
-                  >
-                    {business.name.charAt(0).toUpperCase()}
-                  </span>
-                )}
-                <span className="truncate font-serif text-xl">
-                  {business.name}
+        <header className="border-b border-zinc-200 bg-white">
+          <div
+            className={`flex items-center gap-4 py-4 md:gap-8 ${STORE_CONTAINER}`}
+          >
+            <Link
+              href="/"
+              className="flex min-w-0 items-center gap-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              {business.logo_url ? (
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden bg-transparent">
+                  <Image
+                    src={business.logo_url}
+                    alt={`Logo de ${business.name}`}
+                    fill
+                    sizes="70px"
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-brand-foreground"
+                >
+                  {business.name.charAt(0).toUpperCase()}
                 </span>
-              </Link>
+              )}
+              <span className="truncate font-serif text-2xl">
+                {business.name}
+              </span>
+            </Link>
 
-              <div className="hidden flex-1 justify-center px-8 sm:flex">
-                <SearchForm className="max-w-sm" inputId="q-desktop" />
-              </div>
-
-              <div className="shrink-0">
-                <CartButton />
-              </div>
+            <div className="hidden flex-1 md:block">
+              <SearchForm className="mx-auto max-w-xl" inputId="q-desktop" />
             </div>
 
-            <div className="sm:hidden">
-              <SearchForm inputId="q-mobile" />
+            <div className="ml-auto shrink-0 md:ml-0">
+              <CartButton />
             </div>
+          </div>
 
-            {categories.length > 0 && (
-              <nav
-                aria-label="Categorías"
-                className="flex min-w-0 gap-6 overflow-x-auto text-sm sm:flex-wrap sm:overflow-visible"
+          <div className={`pb-4 md:hidden ${STORE_CONTAINER}`}>
+            <SearchForm inputId="q-mobile" />
+          </div>
+
+          {categories.length > 0 && (
+            <nav aria-label="Categorías" className="border-t border-zinc-100">
+              <ul
+                className={`flex min-w-0 gap-8 overflow-x-auto py-3 text-xs md:flex-wrap md:justify-center md:overflow-visible ${STORE_CONTAINER}`}
               >
                 {categories.map((category) => (
-                  <Link
-                    key={category.id}
-                    href={`/categorias/${category.slug}`}
-                    className="shrink-0 tracking-wide text-zinc-600 uppercase hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                  >
-                    {category.name}
-                  </Link>
+                  <li key={category.id} className="shrink-0">
+                    <Link
+                      href={`/categorias/${category.slug}`}
+                      className="font-medium tracking-[0.15em] text-zinc-700 uppercase hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    >
+                      {category.name}
+                    </Link>
+                  </li>
                 ))}
-              </nav>
-            )}
-          </div>
+              </ul>
+            </nav>
+          )}
         </header>
 
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
-          {children}
-        </main>
+        <main className="flex-1">{children}</main>
 
         <SiteFooter business={business} categories={categories} />
       </div>

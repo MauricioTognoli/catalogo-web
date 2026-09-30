@@ -60,7 +60,7 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
   }
 
   return (
-    <div className="grid gap-8 md:grid-cols-2">
+    <div className="mx-auto w-full max-w-6xl px-4 grid gap-8 py-10 md:grid-cols-2">
       <ProductGallery images={product.images} productName={product.name} />
 
       <div className="space-y-4">

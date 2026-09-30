@@ -20,7 +20,7 @@ export default function SiteError({
   retry: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center gap-4 py-16 text-center">
+    <div className="mx-auto w-full max-w-6xl px-4 flex flex-col items-center gap-4 py-16 text-center">
       <h1 className="font-serif text-3xl text-zinc-900">Algo salió mal</h1>
       <p className="text-zinc-600">
         Hubo un problema al cargar esta página. Podés intentar de nuevo o
