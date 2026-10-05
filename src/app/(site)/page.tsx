@@ -15,7 +15,7 @@ import {
   getPublishedStorefront,
   storefrontImageUrl,
 } from "@/lib/storefront/queries";
-import { firstPresent, logoShareImage, pageMetadata, toDescription } from "@/lib/seo/metadata";
+import { pageMetadata, toDescription } from "@/lib/seo/metadata";
 import { ProductGrid } from "@/components/catalog/product-grid";
 import { HeroBanner } from "@/components/catalog/hero-banner";
 import { CategoryTabs } from "@/components/catalog/category-tabs";
@@ -34,6 +34,7 @@ import { getRequestNow } from "@/lib/offers/request-time";
 
 const NEW_ARRIVALS_LIMIT = 8;
 const TOP_PRODUCTS_PER_CATEGORY = 4;
+const SHARE_IMAGE_PATH = "/og-image.jpg";
 
 export async function generateMetadata(): Promise<Metadata> {
   const business = await getPublicBusiness();
@@ -44,12 +45,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   // Siempre la portada PUBLICADA: la vista previa no cambia lo que se
   // comparte ni lo que ven los buscadores.
-  const [published, products] = await Promise.all([
-    getPublishedStorefront(business.id),
-    getPublicProducts(business.id),
-  ]);
-  const heroImage = storefrontImageUrl(published.hero.imagePath);
-  const productWithImage = products.find((product) => product.mainImageUrl);
+  const published = await getPublishedStorefront(business.id);
 
   return pageMetadata({
     title: business.name,
@@ -59,13 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
       `Conocé los productos de ${business.name} y hacé tu pedido por WhatsApp.`,
     path: "/",
     siteName: business.name,
-    image: firstPresent(
-      heroImage ? { url: heroImage, alt: business.name } : null,
-      productWithImage
-        ? { url: productWithImage.mainImageUrl!, alt: productWithImage.name }
-        : null,
-      logoShareImage(business),
-    ),
+    image: { url: SHARE_IMAGE_PATH, alt: business.name, width: 1200, height: 630 },
   });
 }
 

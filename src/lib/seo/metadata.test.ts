@@ -68,6 +68,20 @@ describe("pageMetadata", () => {
     expect(logoShareImage({ name: "Joyería Sol", logo_url: null })).toBeNull();
   });
 
+  it("con medidas: las publica en og:image", () => {
+    const metadata = pageMetadata({
+      ...base,
+      image: { url: "/og-image.jpg", alt: "Joyería Sol", width: 1200, height: 630 },
+    });
+    expect(metadata.openGraph).toMatchObject({
+      images: [{ url: "/og-image.jpg", alt: "Joyería Sol", width: 1200, height: 630 }],
+    });
+    expect(metadata.twitter).toMatchObject({
+      card: "summary_large_image",
+      images: ["/og-image.jpg"],
+    });
+  });
+
   it("título absoluto para el inicio (sin repetir el nombre)", () => {
     const metadata = pageMetadata({ ...base, title: "Joyería Sol", image: null, absoluteTitle: true });
     expect(metadata.title).toEqual({ absolute: "Joyería Sol" });
