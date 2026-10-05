@@ -31,6 +31,7 @@ import { OfferBanner } from "@/components/catalog/offer-banner";
 import { OfferRefresher } from "@/components/catalog/offer-refresher";
 import { getFeaturedOffer } from "@/lib/offers/queries";
 import { getRequestNow } from "@/lib/offers/request-time";
+import { inStockFirst } from "@/lib/stock/availability";
 
 const NEW_ARRIVALS_LIMIT = 8;
 const TOP_PRODUCTS_PER_CATEGORY = 4;
@@ -99,7 +100,7 @@ export default async function HomePage() {
   );
 
   const newArrivals = products.slice(0, NEW_ARRIVALS_LIMIT);
-  const featured = visibleFeatured(config.featured.productIds, products);
+  const featured = inStockFirst(visibleFeatured(config.featured.productIds, products));
 
   // Los botones solo apuntan a destinos que existen y se ven: si una
   // categoría se borró o un producto se ocultó, el botón no se dibuja.

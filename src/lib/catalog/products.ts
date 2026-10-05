@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { isPublicProductPurchasable } from "@/lib/stock/availability";
+import { inStockFirst, isPublicProductPurchasable } from "@/lib/stock/availability";
 import { effectivePrice, type OfferLike } from "@/lib/offers/pricing";
 import { getRequestNow } from "@/lib/offers/request-time";
 
@@ -152,7 +152,7 @@ export const getPublicProducts = cache(
       throw error;
     }
 
-    return (data ?? []).map(toProductCard);
+    return inStockFirst((data ?? []).map(toProductCard));
   },
 );
 
@@ -190,7 +190,7 @@ export const searchPublicProducts = cache(
       throw error;
     }
 
-    return (data ?? []).map(toProductCard);
+    return inStockFirst((data ?? []).map(toProductCard));
   },
 );
 
