@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   LOW_STOCK_THRESHOLD,
   MAX_STOCK,
+  inStockFirst,
   isBlockingStatus,
   isProductPurchasable,
   isPublicProductPurchasable,
@@ -11,6 +12,24 @@ import {
   summarizeStock,
   type CartLineFacts,
 } from "./availability";
+
+describe("inStockFirst", () => {
+  it("manda los sin stock al final y conserva el orden de cada grupo", () => {
+    const products = [
+      { id: "a", inStock: false },
+      { id: "b", inStock: true },
+      { id: "c", inStock: false },
+      { id: "d", inStock: true },
+    ];
+    expect(inStockFirst(products).map((product) => product.id)).toEqual([
+      "b",
+      "d",
+      "a",
+      "c",
+    ]);
+    expect(products.map((product) => product.id)).toEqual(["a", "b", "c", "d"]);
+  });
+});
 
 describe("isSizePurchasable", () => {
   it("requiere talle activo y con unidades", () => {

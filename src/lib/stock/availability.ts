@@ -52,6 +52,14 @@ export function isPublicProductPurchasable(product: {
   return product.inStock;
 }
 
+/** Los productos sin stock al final, sin alterar el orden dentro de cada grupo. */
+export function inStockFirst<T extends { inStock: boolean }>(products: T[]): T[] {
+  return [
+    ...products.filter((product) => product.inStock),
+    ...products.filter((product) => !product.inStock),
+  ];
+}
+
 export type StockState = "ok" | "low" | "out" | "untracked";
 
 export type StockSummary = {
