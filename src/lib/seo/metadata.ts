@@ -29,6 +29,8 @@ export type ShareImage = {
   alt: string;
   /** false para el logo (cuadrado): tarjeta chica en vez de la grande. */
   large?: boolean;
+  width?: number;
+  height?: number;
 };
 
 /** Logo del negocio como último recurso para compartir. */
@@ -76,7 +78,19 @@ export function pageMetadata({
       url: path,
       title: socialTitle,
       description,
-      ...(image ? { images: [{ url: image.url, alt: image.alt }] } : {}),
+      ...(image
+        ? {
+            images: [
+              {
+                url: image.url,
+                alt: image.alt,
+                ...(image.width && image.height
+                  ? { width: image.width, height: image.height }
+                  : {}),
+              },
+            ],
+          }
+        : {}),
     },
     twitter: {
       card: image && image.large !== false ? "summary_large_image" : "summary",
