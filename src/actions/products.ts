@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateCatalog } from "@/lib/catalog/revalidate";
 import { redirect } from "next/navigation";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
@@ -146,6 +147,7 @@ export async function createProduct(
     return { error: "No se pudo crear el producto. Probá de nuevo." };
   }
 
+  revalidateCatalog();
   revalidatePath("/admin/productos");
   revalidatePath("/admin/dashboard");
   // Se continúa en la edición: ahí se cargan imágenes y talles, que
@@ -262,6 +264,7 @@ export async function updateProduct(
     return { error: "No se pudo actualizar el producto. Probá de nuevo." };
   }
 
+  revalidateCatalog();
   revalidatePath("/admin/productos");
   revalidatePath("/admin/dashboard");
   revalidatePath(`/admin/productos/${productId}`);
@@ -314,6 +317,7 @@ export async function toggleProductAvailability(
     return { error: "No se pudo actualizar la disponibilidad. Probá de nuevo." };
   }
 
+  revalidateCatalog();
   revalidatePath("/admin/productos");
   return { error: null };
 }
@@ -380,6 +384,7 @@ export async function deleteProduct(
     await supabase.storage.from(PRODUCT_IMAGES_BUCKET).remove(imagePaths);
   }
 
+  revalidateCatalog();
   revalidatePath("/admin/productos");
   revalidatePath("/admin/dashboard");
   return { error: null };

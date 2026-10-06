@@ -119,7 +119,7 @@ export function SiteFooter({
 
       <div className="border-t border-zinc-200">
         <div
-          className={`flex flex-wrap items-center justify-between gap-4 py-5 text-xs text-zinc-500 ${STORE_CONTAINER}`}
+          className={`flex flex-wrap items-center justify-between gap-4 py-5 text-xs text-zinc-600 ${STORE_CONTAINER}`}
         >
           <p>{business.name}</p>
           {business.instagram_url && (

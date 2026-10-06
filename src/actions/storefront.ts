@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateCatalog } from "@/lib/catalog/revalidate";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -285,7 +286,7 @@ export async function publishStorefront(
   await removeUnusedImages(supabase, business.id, row.published, [row.draft]);
 
   revalidateAdmin();
-  revalidatePath("/", "layout");
+  revalidateCatalog();
   return { error: null };
 }
 

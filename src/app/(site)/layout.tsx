@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
 import { draftMode } from "next/headers";
 import Link from "next/link";
@@ -14,7 +13,7 @@ import { SearchForm } from "@/components/catalog/search-form";
 import { SiteFooter } from "@/components/catalog/site-footer";
 import { PreviewBar } from "@/components/catalog/preview-bar";
 import { STORE_CONTAINER } from "@/components/catalog/store-section";
-import { StoreBrandProvider, StoreLoader } from "@/components/catalog/store-loader";
+import { StoreBrandProvider } from "@/components/catalog/store-loader";
 import { LinkPendingIndicator } from "@/components/catalog/link-pending-indicator";
 import { getPublicStorefront } from "@/lib/storefront/queries";
 
@@ -59,11 +58,7 @@ export default async function SiteLayout({
         <div
           className={`${playfair.variable} flex min-h-screen flex-col bg-white text-zinc-900`}
         >
-          <Suspense
-            fallback={<StoreLoader message="Cargando catálogo…" className="min-h-screen" />}
-          >
-            <StoreFrame business={business}>{children}</StoreFrame>
-          </Suspense>
+          <StoreFrame business={business}>{children}</StoreFrame>
         </div>
       </StoreBrandProvider>
 
@@ -108,7 +103,8 @@ async function StoreFrame({
                   src={business.logo_url}
                   alt={`Logo de ${business.name}`}
                   fill
-                  sizes="70px"
+                  sizes="56px"
+                  loading="eager"
                   className="object-cover"
                 />
               </div>

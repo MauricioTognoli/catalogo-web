@@ -1,6 +1,7 @@
 import { cache } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { getCatalogProductRows } from "@/lib/catalog/products";
 import { isPublicProductPurchasable } from "@/lib/stock/availability";
+import { getActiveOffers } from "./active";
 import { effectivePrice } from "./pricing";
 import { getRequestNow } from "./request-time";
 
@@ -14,7 +15,7 @@ export type FeaturedOffer = {
   endsAt: string;
 };
 
-type FeaturedOfferRow = {
+export type FeaturedOfferRow = {
   offer_price: number;
   starts_at: string;
   ends_at: string;
@@ -30,6 +31,62 @@ type FeaturedOfferRow = {
   };
 };
 
+function toFeaturedOffer(row: FeaturedOfferRow, now: number): FeaturedOffer | null {
+  // No se promociona en el banner algo que no se puede comprar: la
+  // portada muestra su banner habitual hasta que vuelva a haber stock.
+  const purchasable = isPublicProductPurchasable({
+    inStock: row.product.in_stock,
+    sizes: row.product.product_size.map((size) => ({
+      available: size.available,
+      inStock: size.in_stock,
+    })),
+  });
+  if (!purchasable) return null;
+
+  const pricing = effectivePrice(
+    Number(row.product.price),
+    [
+      {
+        offerPrice: Number(row.offer_price),
+        startsAt: row.starts_at,
+        endsAt: row.ends_at,
+        enabled: row.enabled,
+      },
+    ],
+    now,
+  );
+  // Precio normal que bajó por debajo del promocional: no hay oferta.
+  if (pricing.compareAtPrice === null || !pricing.offerEndsAt) return null;
+
+  const cover = [...row.product.product_image].sort(
+    (a, b) => a.position - b.position,
+  )[0];
+
+  return {
+    productId: row.product.id,
+    productName: row.product.name,
+    productSlug: row.product.slug,
+    imageUrl: cover?.url ?? null,
+    price: pricing.price,
+    compareAtPrice: pricing.compareAtPrice,
+    endsAt: pricing.offerEndsAt,
+  };
+}
+
+export function pickFeaturedOffer(
+  rows: FeaturedOfferRow[],
+  now: number,
+): FeaturedOffer | null {
+  const byEnd = [...rows].sort(
+    (a, b) => Date.parse(a.ends_at) - Date.parse(b.ends_at),
+  );
+  for (const row of byEnd) {
+    const offer = toFeaturedOffer(row, now);
+    if (offer) return offer;
+  }
+  return null;
+}
+
 /**
  * Oferta destacada vigente del negocio, para el banner. Se calcula en cada
  * request con la hora del servidor: cuando vence, la portada vuelve sola a
@@ -37,73 +94,34 @@ type FeaturedOfferRow = {
  */
 export const getFeaturedOffer = cache(
   async (businessId: string): Promise<FeaturedOffer | null> => {
-    const supabase = await createClient();
-    const now = getRequestNow();
-    const nowIso = new Date(now).toISOString();
+    const [rows, offers] = await Promise.all([
+      getCatalogProductRows(businessId),
+      getActiveOffers(businessId),
+    ]);
+    const products = new Map(rows.map((row) => [row.id, row]));
 
-    const { data, error } = await supabase
-      .from("product_offer")
-      .select(
-        "offer_price, starts_at, ends_at, enabled, product!inner(id, name, slug, price, in_stock, product_image(url, position), product_size(available, in_stock))",
-      )
-      .eq("featured", true)
-      .eq("enabled", true)
-      .lte("starts_at", nowIso)
-      .gt("ends_at", nowIso)
-      .eq("product.business_id", businessId)
-      .eq("product.available", true)
-      .order("ends_at", { ascending: true })
-      .limit(1)
-      .returns<FeaturedOfferRow[]>();
-
-    // Sin la tabla (migración pendiente) o con error, la portada sigue con
-    // su banner habitual.
-    if (error) {
-      console.error("No se pudo leer la oferta destacada", error);
-      return null;
-    }
-
-    const row = data?.[0];
-    if (!row) return null;
-
-    // No se promociona en el banner algo que no se puede comprar: la
-    // portada muestra su banner habitual hasta que vuelva a haber stock.
-    const purchasable = isPublicProductPurchasable({
-      inStock: row.product.in_stock,
-      sizes: row.product.product_size.map((size) => ({
-        available: size.available,
-        inStock: size.in_stock,
-      })),
-    });
-    if (!purchasable) return null;
-
-    const pricing = effectivePrice(
-      Number(row.product.price),
-      [
+    const featured = offers.flatMap((offer): FeaturedOfferRow[] => {
+      const product = offer.featured ? products.get(offer.productId) : undefined;
+      if (!product) return [];
+      return [
         {
-          offerPrice: Number(row.offer_price),
-          startsAt: row.starts_at,
-          endsAt: row.ends_at,
-          enabled: row.enabled,
+          offer_price: offer.offerPrice,
+          starts_at: String(offer.startsAt),
+          ends_at: String(offer.endsAt),
+          enabled: offer.enabled,
+          product: {
+            id: product.id,
+            name: product.name,
+            slug: product.slug,
+            price: product.price,
+            in_stock: product.in_stock,
+            product_image: product.product_image,
+            product_size: product.product_size,
+          },
         },
-      ],
-      now,
-    );
-    // Precio normal que bajó por debajo del promocional: no hay oferta.
-    if (pricing.compareAtPrice === null || !pricing.offerEndsAt) return null;
+      ];
+    });
 
-    const cover = [...row.product.product_image].sort(
-      (a, b) => a.position - b.position,
-    )[0];
-
-    return {
-      productId: row.product.id,
-      productName: row.product.name,
-      productSlug: row.product.slug,
-      imageUrl: cover?.url ?? null,
-      price: pricing.price,
-      compareAtPrice: pricing.compareAtPrice,
-      endsAt: pricing.offerEndsAt,
-    };
+    return pickFeaturedOffer(featured, getRequestNow());
   },
 );

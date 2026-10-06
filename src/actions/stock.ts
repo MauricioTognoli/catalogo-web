@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateCatalog } from "@/lib/catalog/revalidate";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -112,6 +113,7 @@ export async function updateInventory(
     }
   }
 
+  revalidateCatalog();
   revalidatePath("/admin/productos");
   revalidatePath(`/admin/productos/${productId}`);
   revalidatePath("/admin/dashboard");

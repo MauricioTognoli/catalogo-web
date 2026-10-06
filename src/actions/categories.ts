@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateCatalog } from "@/lib/catalog/revalidate";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils/slugify";
@@ -68,6 +69,7 @@ export async function createCategory(
     return { error: "No se pudo crear la categoría. Probá de nuevo." };
   }
 
+  revalidateCatalog();
   revalidatePath("/admin/categorias");
   return { error: null };
 }
@@ -146,6 +148,7 @@ export async function updateCategory(
     return { error: "No se pudo actualizar la categoría. Probá de nuevo." };
   }
 
+  revalidateCatalog();
   revalidatePath("/admin/categorias");
   return { error: null };
 }
@@ -198,6 +201,7 @@ export async function deleteCategory(
     return { error: "No se pudo eliminar la categoría. Probá de nuevo." };
   }
 
+  revalidateCatalog();
   revalidatePath("/admin/categorias");
   return { error: null };
 }

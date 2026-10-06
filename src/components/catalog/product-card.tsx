@@ -6,6 +6,11 @@ import { PriceTag } from "./price-tag";
 import type { PublicProductCard } from "@/lib/catalog/products";
 import { cn } from "@/lib/utils/cn";
 
+export const CARD_IMAGE_SIZES =
+  "(min-width: 1152px) 262px, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw";
+
+export type CardImagePriority = "auto" | "eager" | "high";
+
 const FOCUS_CLASS =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
 
@@ -27,13 +32,23 @@ function StockBadge({ product }: { product: PublicProductCard }) {
   return null;
 }
 
-function ProductImage({ product }: { product: PublicProductCard }) {
+function ProductImage({
+  product,
+  sizes,
+  priority,
+}: {
+  product: PublicProductCard;
+  sizes: string;
+  priority: CardImagePriority;
+}) {
   return product.mainImageUrl ? (
     <StoreImage
       src={product.mainImageUrl}
       alt={product.name}
       fill
-      sizes="(min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
+      sizes={sizes}
+      loading={priority === "auto" ? undefined : "eager"}
+      fetchPriority={priority === "high" ? "high" : undefined}
       className="object-cover transition duration-300 group-hover:scale-105"
     />
   ) : (
@@ -45,10 +60,14 @@ export function ProductCard({
   product,
   variant = "card",
   className,
+  imageSizes = CARD_IMAGE_SIZES,
+  imagePriority = "auto",
 }: {
   product: PublicProductCard;
   variant?: "card" | "minimal";
   className?: string;
+  imageSizes?: string;
+  imagePriority?: CardImagePriority;
 }) {
   if (variant === "minimal") {
     return (
@@ -58,7 +77,7 @@ export function ProductCard({
           className={cn("group block text-center", FOCUS_CLASS)}
         >
           <div className="relative aspect-square w-full overflow-hidden bg-white">
-            <ProductImage product={product} />
+            <ProductImage product={product} sizes={imageSizes} priority={imagePriority} />
             <StockBadge product={product} />
             <LinkPendingIndicator className="absolute top-3 left-3" />
           </div>
@@ -88,7 +107,7 @@ export function ProductCard({
         )}
       >
         <div className="relative aspect-square w-full overflow-hidden bg-white">
-          <ProductImage product={product} />
+          <ProductImage product={product} sizes={imageSizes} priority={imagePriority} />
           <StockBadge product={product} />
           <LinkPendingIndicator className="absolute top-3 left-3" />
         </div>

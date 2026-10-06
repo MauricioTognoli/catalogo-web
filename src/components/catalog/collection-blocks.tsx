@@ -33,9 +33,9 @@ export function CollectionBlocks({ blocks }: { blocks: CollectionBlockView[] }) 
                   {block.eyebrow}
                 </p>
               )}
-              <h3 className="font-serif text-2xl text-zinc-800 lg:text-3xl">
+              <h2 className="font-serif text-2xl text-zinc-800 lg:text-3xl">
                 {block.title}
-              </h3>
+              </h2>
               {block.cta && (
                 <Button asChild size="sm" className="mt-2">
                   <Link href={block.cta.href}>{block.cta.label}</Link>

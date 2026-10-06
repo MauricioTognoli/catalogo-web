@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getPublicBusiness } from "@/lib/catalog/business";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import { getSiteUrl } from "@/lib/seo/site-url";
 
 const PAGE_SIZE = 1000;
@@ -15,7 +15,7 @@ type Row = { slug: string; updated_at: string };
  * catálogo entero en una consulta.
  */
 async function fetchAll(table: "category" | "product", businessId: string): Promise<Row[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const rows: Row[] = [];
 
   for (let from = 0; from < MAX_URLS; from += PAGE_SIZE) {

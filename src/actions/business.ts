@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { revalidateCatalog } from "@/lib/catalog/revalidate";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { getStoragePathFromPublicUrl } from "@/lib/storage/getStoragePathFromPublicUrl";
@@ -105,6 +106,7 @@ export async function createBusiness(
     return { error: "No se pudo crear el negocio. Probá de nuevo." };
   }
 
+  revalidateCatalog();
   revalidatePath("/admin/dashboard");
   redirect("/admin/dashboard");
 }
@@ -165,6 +167,7 @@ export async function updateBusiness(
     return { error: "No se pudo actualizar el negocio. Probá de nuevo." };
   }
 
+  revalidateCatalog();
   revalidatePath("/admin/configuracion");
   revalidatePath("/admin/dashboard");
   return { error: null };
@@ -244,6 +247,7 @@ export async function uploadBusinessLogo(
     }
   }
 
+  revalidateCatalog();
   revalidatePath("/admin/configuracion");
   revalidatePath("/admin/dashboard");
   return { error: null };
@@ -290,6 +294,7 @@ export async function deleteBusinessLogo(
     await supabase.storage.from(BUSINESS_ASSETS_BUCKET).remove([path]);
   }
 
+  revalidateCatalog();
   revalidatePath("/admin/configuracion");
   revalidatePath("/admin/dashboard");
   return { error: null };

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateCatalog } from "@/lib/catalog/revalidate";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import { runProductImport, type ImportDeps, type ImportOutcome } from "@/lib/import/run-import";
@@ -131,7 +132,7 @@ async function run(formData: FormData, mode: "preview" | "commit"): Promise<Impo
     if (outcome.kind === "imported") {
       revalidatePath("/admin/productos");
       revalidatePath("/admin/dashboard");
-      revalidatePath("/", "layout");
+      revalidateCatalog();
     }
     return outcome;
   } catch {

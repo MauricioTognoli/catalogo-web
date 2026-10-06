@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateCatalog } from "@/lib/catalog/revalidate";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import { findOfferConflict, validateOffer } from "@/lib/offers/pricing";
@@ -73,7 +74,7 @@ async function loadOwnedProduct(
 function revalidateOffers() {
   revalidatePath("/admin/ofertas");
   // Precios y banner de la tienda.
-  revalidatePath("/", "layout");
+  revalidateCatalog();
 }
 
 /**

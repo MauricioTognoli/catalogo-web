@@ -6,6 +6,9 @@ import { getPublicProducts } from "@/lib/catalog/products";
 import { ProductGrid } from "@/components/catalog/product-grid";
 import { OfferRefresher } from "@/components/catalog/offer-refresher";
 import { firstPresent, logoShareImage, pageMetadata } from "@/lib/seo/metadata";
+import { getSiteUrl } from "@/lib/seo/site-url";
+import { breadcrumbJsonLd } from "@/lib/seo/structured-data";
+import { JsonLd } from "@/components/seo/json-ld";
 
 type CategoriaPageProps = {
   params: Promise<{ slug: string }>;
@@ -61,6 +64,15 @@ export default async function CategoriaPage({ params }: CategoriaPageProps) {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 space-y-8 py-10">
+      <JsonLd
+        data={breadcrumbJsonLd(
+          [
+            { name: "Inicio", path: "/" },
+            { name: category.name, path: `/categorias/${category.slug}` },
+          ],
+          getSiteUrl(),
+        )}
+      />
       <h1 className="font-serif text-3xl text-zinc-900">{category.name}</h1>
 
       {products.length === 0 ? (
@@ -69,7 +81,7 @@ export default async function CategoriaPage({ params }: CategoriaPageProps) {
         </p>
       ) : (
         <>
-          <ProductGrid products={products} />
+          <ProductGrid products={products} priorityCount={4} />
           <OfferRefresher endsAt={products.map((product) => product.offerEndsAt)} />
         </>
       )}

@@ -107,8 +107,9 @@ export function ProductGallery({
                   src={image.url}
                   alt={`${productName} — imagen ${index + 1} de ${count}`}
                   fill
-                  sizes="(min-width: 768px) 50vw, 100vw"
-                  priority={index === 0}
+                  sizes="(min-width: 1152px) 544px, (min-width: 768px) 50vw, 100vw"
+                  preload={index === 0}
+                  fetchPriority={index === 0 ? "high" : undefined}
                   draggable={false}
                   className="object-cover"
                 />

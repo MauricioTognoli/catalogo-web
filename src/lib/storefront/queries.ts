@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { draftMode } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import {
   hasUnpublishedChanges,
   normalizeStorefrontConfig,
@@ -65,7 +66,7 @@ export type PublicStorefront = {
  */
 export const getPublishedStorefront = cache(
   async (businessId: string): Promise<StorefrontConfig> => {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("storefront")
       .select("published")
@@ -89,10 +90,10 @@ export const getPublishedStorefront = cache(
  */
 export const getPublicStorefront = cache(
   async (businessId: string): Promise<PublicStorefront> => {
-    const supabase = await createClient();
     const { isEnabled: previewRequested } = await draftMode();
 
     if (previewRequested) {
+      const supabase = await createClient();
       const { data, error } = await supabase
         .from("storefront")
         .select("draft")

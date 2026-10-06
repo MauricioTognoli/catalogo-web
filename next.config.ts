@@ -13,6 +13,8 @@ function getSupabaseHostname(): string | undefined {
 const supabaseHostname = getSupabaseHostname();
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || ".next",
+  typescript: { tsconfigPath: process.env.NEXT_TSCONFIG_PATH || "tsconfig.json" },
   allowedDevOrigins: ["192.168.1.155"],
   // Todo el panel (login, admin, vista previa de borradores, descargas y
   // route handlers sin HTML) queda fuera de los buscadores aunque algún
@@ -34,6 +36,8 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 2678400,
     remotePatterns: supabaseHostname
       ? [
           {
