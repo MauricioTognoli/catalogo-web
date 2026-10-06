@@ -13,6 +13,7 @@ function getSupabaseHostname(): string | undefined {
 const supabaseHostname = getSupabaseHostname();
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["192.168.1.155"],
   // Todo el panel (login, admin, vista previa de borradores, descargas y
   // route handlers sin HTML) queda fuera de los buscadores aunque algún
   // enlace lo exponga. Las páginas además lo declaran en su metadata.
