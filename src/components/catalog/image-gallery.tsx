@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { StoreImage } from "./store-image";
 import { SectionHeading } from "./section-heading";
 import { StoreSection } from "./store-section";
 
@@ -40,7 +40,7 @@ export function ImageGallery({
               MOSAIC_TILES[index % MOSAIC_TILES.length]
             }`}
           >
-            <Image
+            <StoreImage
               src={image.url}
               alt={image.alt}
               fill

@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/catalog/ui/button";
+import { StoreImage } from "./store-image";
 import { StoreSection } from "./store-section";
 
 /** Banner promocional principal ("Must Have" en joyas.pdf). */
@@ -26,7 +26,7 @@ export function PromoBanner({
       >
         {imageUrl && (
           <div className="relative aspect-4/5 overflow-hidden bg-zinc-100">
-            <Image
+            <StoreImage
               src={imageUrl}
               alt=""
               fill

@@ -1,3 +1,4 @@
+import Form from "next/form";
 import { Search } from "lucide-react";
 import { Input } from "@/components/catalog/ui/input";
 import { cn } from "@/lib/utils/cn";
@@ -14,9 +15,8 @@ export function SearchForm({
   inputId?: string;
 }) {
   return (
-    <form
+    <Form
       action="/buscar"
-      method="GET"
       role="search"
       className={cn("w-full", className)}
     >
@@ -39,6 +39,6 @@ export function SearchForm({
           <Search className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
-    </form>
+    </Form>
   );
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
+import { StoreImage } from "./store-image";
+import { LinkPendingIndicator } from "./link-pending-indicator";
 import { ImagePlaceholder } from "./image-placeholder";
 import { PriceTag } from "./price-tag";
 import type { PublicProductCard } from "@/lib/catalog/products";
@@ -28,7 +29,7 @@ function StockBadge({ product }: { product: PublicProductCard }) {
 
 function ProductImage({ product }: { product: PublicProductCard }) {
   return product.mainImageUrl ? (
-    <Image
+    <StoreImage
       src={product.mainImageUrl}
       alt={product.name}
       fill
@@ -59,6 +60,7 @@ export function ProductCard({
           <div className="relative aspect-square w-full overflow-hidden bg-white">
             <ProductImage product={product} />
             <StockBadge product={product} />
+            <LinkPendingIndicator className="absolute top-3 left-3" />
           </div>
           <p className="mt-4 truncate font-serif text-lg text-zinc-900">
             {product.name}
@@ -88,6 +90,7 @@ export function ProductCard({
         <div className="relative aspect-square w-full overflow-hidden bg-white">
           <ProductImage product={product} />
           <StockBadge product={product} />
+          <LinkPendingIndicator className="absolute top-3 left-3" />
         </div>
 
         <div className="flex-1 space-y-1 border-t border-zinc-100 p-4">

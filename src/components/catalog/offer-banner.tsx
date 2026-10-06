@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { FeaturedOffer } from "@/lib/offers/queries";
 import { Button } from "@/components/catalog/ui/button";
+import { StoreImage } from "./store-image";
 import { OfferCountdown } from "./offer-clock";
 import { PriceTag } from "./price-tag";
 import { StoreSection } from "./store-section";
@@ -26,7 +26,7 @@ export function OfferBanner({
       >
         {offer.imageUrl && (
           <div className="relative aspect-4/5 overflow-hidden bg-zinc-100">
-            <Image
+            <StoreImage
               src={offer.imageUrl}
               alt=""
               fill

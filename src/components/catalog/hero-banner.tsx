@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/catalog/ui/button";
+import { StoreImage } from "./store-image";
 import { STORE_CONTAINER } from "./store-section";
 
 export function HeroBanner({
@@ -20,12 +20,14 @@ export function HeroBanner({
   return (
     <section className="relative flex min-h-105 items-center overflow-hidden bg-brand sm:min-h-130 lg:min-h-150">
       {imageUrl && (
-        <Image
+        <StoreImage
           src={imageUrl}
           alt=""
           fill
           priority
           sizes="100vw"
+          tone="light"
+          placement="corner"
           className="object-cover"
         />
       )}
