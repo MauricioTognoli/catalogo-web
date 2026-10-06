@@ -8,6 +8,8 @@ import { PriceTag } from "@/components/catalog/price-tag";
 import { OfferCountdown } from "@/components/catalog/offer-clock";
 import { ProductGallery } from "@/components/catalog/product-gallery";
 import { AddToCartForm } from "@/components/cart/add-to-cart-form";
+import { ShareProductButton } from "@/components/catalog/share-product-button";
+import { getSiteUrl } from "@/lib/seo/site-url";
 
 type ProductoPageProps = {
   params: Promise<{ slug: string }>;
@@ -63,9 +65,17 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
     <div className="mx-auto w-full max-w-6xl px-4 grid gap-8 py-10 md:grid-cols-2">
       <ProductGallery images={product.images} productName={product.name} />
 
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         <div>
-          <h1 className="font-serif text-3xl text-zinc-900">{product.name}</h1>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="min-w-0 font-serif text-3xl break-words text-zinc-900">
+              {product.name}
+            </h1>
+            <ShareProductButton
+              title={product.name}
+              url={new URL(`/productos/${product.slug}`, getSiteUrl()).toString()}
+            />
+          </div>
           <PriceTag
             price={product.price}
             compareAtPrice={product.compareAtPrice}
@@ -105,7 +115,7 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
         )}
 
         {product.description && (
-          <p className="whitespace-pre-line text-zinc-700">
+          <p className="whitespace-pre-line break-words text-zinc-700">
             {product.description}
           </p>
         )}
