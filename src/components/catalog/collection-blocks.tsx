@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/catalog/ui/button";
+import { StoreImage } from "./store-image";
 import { StoreSection } from "./store-section";
 
 export type CollectionBlockView = {
@@ -19,7 +19,7 @@ export function CollectionBlocks({ blocks }: { blocks: CollectionBlockView[] }) 
         {blocks.map((block, index) => (
           <article key={index} className="relative sm:pb-12">
             <div className="relative aspect-4/5 w-full overflow-hidden bg-zinc-100 sm:w-3/4">
-              <Image
+              <StoreImage
                 src={block.imageUrl}
                 alt=""
                 fill

@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { StoreImage } from "./store-image";
 import { ImagePlaceholder } from "./image-placeholder";
 import { ImageLightbox } from "./image-lightbox";
 import {
@@ -103,7 +103,7 @@ export function ProductGallery({
                 }
                 className="relative block h-full w-full cursor-zoom-in focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
               >
-                <Image
+                <StoreImage
                   src={image.url}
                   alt={`${productName} — imagen ${index + 1} de ${count}`}
                   fill
@@ -168,7 +168,14 @@ export function ProductGallery({
                 index === activeIndex ? "border-brand" : "border-transparent",
               )}
             >
-              <Image src={image.url} alt="" fill sizes="64px" className="object-cover" />
+              <StoreImage
+                src={image.url}
+                alt=""
+                fill
+                sizes="64px"
+                compact
+                className="object-cover"
+              />
             </button>
           ))}
         </div>

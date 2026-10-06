@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useEffectEvent, useRef, useState, type PointerEvent } from "react";
-import Image from "next/image";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { ChevronLeft, ChevronRight, Minus, Plus, X } from "lucide-react";
 import {
@@ -21,6 +20,7 @@ import {
 } from "@/lib/gallery/gallery-math";
 import type { PublicProductImage } from "@/lib/catalog/products";
 import { cn } from "@/lib/utils/cn";
+import { StoreImage } from "./store-image";
 
 const TAP_MAX_MOVE = 10;
 const TAP_MAX_MS = 300;
@@ -319,11 +319,12 @@ function LightboxBody({ images, productName, index, onIndexChange }: LightboxPro
                       : undefined
                   }
                 >
-                  <Image
+                  <StoreImage
                     src={image.url}
                     alt={`${productName} — imagen ${slideIndex + 1} de ${count}`}
                     fill
                     sizes="100vw"
+                    tone="light"
                     draggable={false}
                     className="object-contain"
                   />
