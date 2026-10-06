@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getPublicBusiness } from "@/lib/catalog/business";
 import { getPublicCategories } from "@/lib/catalog/categories";
-import { getPublicProducts } from "@/lib/catalog/products";
+import { filterByCategory, getPublicProducts } from "@/lib/catalog/products";
 import {
   collectionHiddenReason,
   galleryHiddenReason,
@@ -16,6 +16,9 @@ import {
   storefrontImageUrl,
 } from "@/lib/storefront/queries";
 import { pageMetadata, toDescription } from "@/lib/seo/metadata";
+import { getSiteUrl } from "@/lib/seo/site-url";
+import { homeJsonLd } from "@/lib/seo/structured-data";
+import { JsonLd } from "@/components/seo/json-ld";
 import { ProductGrid } from "@/components/catalog/product-grid";
 import { HeroBanner } from "@/components/catalog/hero-banner";
 import { CategoryTabs } from "@/components/catalog/category-tabs";
@@ -76,18 +79,13 @@ export default async function HomePage() {
     getFeaturedOffer(business.id),
   ]);
 
-  // Un fetch por categoría (mismo getPublicProducts que ya usa la página
-  // de categoría): PublicProductCard no trae category_id, así que no se
-  // puede derivar esto filtrando la lista general en el cliente.
-  const categoryGroups = await Promise.all(
-    categories.map(async (category) => ({
-      category,
-      products: (await getPublicProducts(business.id, category.id)).slice(
-        0,
-        TOP_PRODUCTS_PER_CATEGORY,
-      ),
-    })),
-  );
+  const categoryGroups = categories.map((category) => ({
+    category,
+    products: filterByCategory(products, category.id).slice(
+      0,
+      TOP_PRODUCTS_PER_CATEGORY,
+    ),
+  }));
 
   const newArrivals = products.slice(0, NEW_ARRIVALS_LIMIT);
   const featured = inStockFirst(visibleFeatured(config.featured.productIds, products));
@@ -111,6 +109,8 @@ export default async function HomePage() {
 
   return (
     <>
+      <JsonLd data={homeJsonLd(business, getSiteUrl())} />
+
       <HeroBanner
         eyebrow={config.hero.eyebrow}
         title={config.hero.title || business.name}

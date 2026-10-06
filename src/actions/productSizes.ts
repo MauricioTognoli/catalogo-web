@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateCatalog } from "@/lib/catalog/revalidate";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import { parseStockInput } from "@/lib/stock/availability";
@@ -10,6 +11,7 @@ const MAX_LABEL_LENGTH = 30;
 // El stock por talle también se muestra en el listado y en los avisos del
 // inicio, no solo en la ficha del producto.
 function revalidateProductPaths(productId: string) {
+  revalidateCatalog();
   revalidatePath(`/admin/productos/${productId}`);
   revalidatePath("/admin/productos");
   revalidatePath("/admin/dashboard");

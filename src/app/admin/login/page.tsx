@@ -10,6 +10,8 @@ import {
 import { BusinessMark } from "@/components/admin/business-mark";
 import { LoginForm } from "./login-form";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Iniciar sesión",
 };

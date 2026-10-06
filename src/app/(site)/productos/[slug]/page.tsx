@@ -10,6 +10,8 @@ import { ProductGallery } from "@/components/catalog/product-gallery";
 import { AddToCartForm } from "@/components/cart/add-to-cart-form";
 import { ShareProductButton } from "@/components/catalog/share-product-button";
 import { getSiteUrl } from "@/lib/seo/site-url";
+import { breadcrumbJsonLd, productJsonLd } from "@/lib/seo/structured-data";
+import { JsonLd } from "@/components/seo/json-ld";
 
 type ProductoPageProps = {
   params: Promise<{ slug: string }>;
@@ -61,8 +63,20 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
     notFound();
   }
 
+  const siteUrl = getSiteUrl();
+  const breadcrumbs = [
+    { name: "Inicio", path: "/" },
+    ...(product.category
+      ? [{ name: product.category.name, path: `/categorias/${product.category.slug}` }]
+      : []),
+    { name: product.name, path: `/productos/${product.slug}` },
+  ];
+
   return (
     <div className="mx-auto w-full max-w-6xl px-4 grid gap-8 py-10 md:grid-cols-2">
+      <JsonLd data={productJsonLd(product, business, siteUrl)} />
+      <JsonLd data={breadcrumbJsonLd(breadcrumbs, siteUrl)} />
+
       <ProductGallery images={product.images} productName={product.name} />
 
       <div className="min-w-0 space-y-4">
@@ -73,7 +87,7 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
             </h1>
             <ShareProductButton
               title={product.name}
-              url={new URL(`/productos/${product.slug}`, getSiteUrl()).toString()}
+              url={new URL(`/productos/${product.slug}`, siteUrl).toString()}
             />
           </div>
           <PriceTag

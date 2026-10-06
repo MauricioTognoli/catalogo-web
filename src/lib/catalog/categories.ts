@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export type PublicCategory = {
   id: string;
@@ -11,7 +11,7 @@ export type PublicCategory = {
 
 export const getPublicCategories = cache(
   async (businessId: string): Promise<PublicCategory[]> => {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
 
     const { data, error } = await supabase
       .from("category")
@@ -30,19 +30,7 @@ export const getPublicCategories = cache(
 /** Resuelve por business_id + slug, nunca por nombre. */
 export const getPublicCategory = cache(
   async (businessId: string, slug: string): Promise<PublicCategory | null> => {
-    const supabase = await createClient();
-
-    const { data, error } = await supabase
-      .from("category")
-      .select("id, business_id, name, slug, position")
-      .eq("business_id", businessId)
-      .eq("slug", slug)
-      .maybeSingle();
-
-    if (error) {
-      throw error;
-    }
-
-    return data;
+    const categories = await getPublicCategories(businessId);
+    return categories.find((category) => category.slug === slug) ?? null;
   },
 );

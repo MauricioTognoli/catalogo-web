@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateCatalog } from "@/lib/catalog/revalidate";
 import { getCurrentBusiness } from "@/lib/business/getCurrentBusiness";
 import { createClient } from "@/lib/supabase/server";
 import { getStoragePathFromPublicUrl } from "@/lib/storage/getStoragePathFromPublicUrl";
@@ -107,6 +108,7 @@ export async function uploadProductImage(
     return { error: "No se pudo guardar la imagen. Probá de nuevo." };
   }
 
+  revalidateCatalog();
   revalidatePath(`/admin/productos/${productId}`);
   return { error: null };
 }
@@ -179,6 +181,7 @@ export async function deleteProductImage(
     await supabase.storage.from(BUCKET_NAME).remove([path]);
   }
 
+  revalidateCatalog();
   revalidatePath(`/admin/productos/${productId}`);
   return { error: null };
 }
@@ -252,6 +255,7 @@ export async function reorderProductImages(
     return { error: "No se pudo guardar el nuevo orden. Probá de nuevo." };
   }
 
+  revalidateCatalog();
   revalidatePath(`/admin/productos/${productId}`);
   return { error: null };
 }

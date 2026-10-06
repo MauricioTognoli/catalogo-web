@@ -24,7 +24,8 @@ export function HeroBanner({
           src={imageUrl}
           alt=""
           fill
-          priority
+          preload
+          fetchPriority="high"
           sizes="100vw"
           tone="light"
           placement="corner"

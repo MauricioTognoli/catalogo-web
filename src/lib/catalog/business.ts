@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export type PublicBusiness = {
   id: string;
@@ -28,7 +28,7 @@ export type PublicBusiness = {
  */
 export const getPublicBusiness = cache(
   async (): Promise<PublicBusiness | null> => {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
 
     const { data, error } = await supabase
       .from("business")
